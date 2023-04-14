@@ -46,25 +46,35 @@ const getUserByEmail = async (req, res) => {
 const userExists = async (req, res) => {
     const email = req.body.email;
     let password = req.body.password;
-    const foundUser = await User.findOne({email: email});
-    if(foundUser)
+    let count = Object.keys(req.body).length;
+    if(typeof password === "password" && validator.validate(email) && count === 2)
     {
-       let same = await isPasswordSame(password, foundUser.password);
-       if(same)
-       {
-            res.status(200);
-            res.send({"Status": 200, "Message": "User exists."});
-       }
-       else
-       {
+        const foundUser = await User.findOne({email: email});
+        if(foundUser)
+        {
+        let same = await isPasswordSame(password, foundUser.password);
+        if(same)
+        {
+                res.status(200);
+                res.send({"Status": 200, "Message": "User exists."});
+        }
+        else
+        {
+                res.status(401);
+                res.send({"Status": 401, "Message": "email or password is incorrect."});
+        }       
+        }
+        else 
+        {
             res.status(401);
             res.send({"Status": 401, "Message": "email or password is incorrect."});
-       }       
+        }
     }
-    else 
+    else
     {
-        res.status(401);
-        res.send({"Status": 401, "Message": "email or password is incorrect."});
+       res.status(400);
+       res.send({"Status": 400, "Message": "Request body is not valid."});
+    //    logger.info(`Username is not valid or not all the mandatory fields were filled.`);
     }
 }
 
