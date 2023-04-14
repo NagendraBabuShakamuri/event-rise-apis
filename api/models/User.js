@@ -19,11 +19,19 @@ const userSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  sex: {
+  mobile: {
     type: String,
     required: true,
   },
-  Address: {
+  gender: {
+    type: String,
+    required: true,
+  },
+  street1: {
+    type: String,
+    required: true,
+  },
+  street2: {
     type: String,
     required: true,
   },
@@ -31,14 +39,16 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  country: {
+  state: {
     type: String,
     required: true,
   },
-  pincode: {
+  zip: {
     type: Number,
     required: true,
   },
 });
 
-module.exports = mongoose.model("user", userSchema);
+const User = mongoose.model("User", userSchema);
+
+module.exports = User;
