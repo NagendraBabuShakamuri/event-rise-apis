@@ -16,3 +16,17 @@ describe('Authentication Tests', function() {
         });
     });
 });
+
+describe('Authentication Tests', function() {
+    describe('Success', function() {
+        it('Return 400 if the email is not valid', function(done) {
+            request(app).post('/createUser').send({
+              email: "Nag",
+              password: "Nag"
+  }).end(function(err, res) {
+                expect(res.statusCode).to.be.equal(400);
+                done();
+            });
+        });
+    });
+});
