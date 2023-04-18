@@ -1,7 +1,9 @@
-const User = require('../models/User');
+const { User, Image } = require('../models/User');
 const saltRounds = 10;
 const validator = require("email-validator");
 const bcrypt = require('bcrypt');
+const AWS = require("aws-sdk");
+const uuid = require('uuid');
 const Ticket = require('../models/ticketSchema');
 require("dotenv").config({ path: "./.env" });
 
@@ -200,6 +202,70 @@ const canRenderEvent = (req, res) => {
     }
 }
 
+function uploadImage(image)
+{
+    return new Promise(async (resolve, reject) => {
+        AWS.config.update({
+            region: process.env.AWS_DEFAULT_REGION
+        });
+        const s3 = new AWS.S3();
+        const fileContent = Buffer.from(image.data, 'binary');
+        const params = {
+            Bucket: process.env.S3_BUCKET,
+            Key: uuid.v4() + "/" + image.name,
+            Body: fileContent
+        }
+        s3.upload(params, (err, data) => {
+            if(err)
+            {
+                logger.error(`${err}`);
+                reject(err);
+            }
+            else 
+            {
+                resolve(data);
+            }
+        });
+    });    
+}
+
+const uploadProfile = async (req, res) => {
+    let isObject = function(a) {
+        return (!!a) && (a.constructor === Object);
+    };
+    if(isObject(req.files.image))
+    {
+        if(req.files.image.mimetype !== 'image/jpeg' && req.files.image.mimetype !== 'image/jpg' && req.files.image.mimetype === 'image/png')
+        {
+            res.status(400);
+            res.send({"Status": 400, "Message": "Only the file formats JPG, JPEG and PNG are allowed."});
+            return;
+        }
+        else
+        {
+            let data = await uploadImage(req.files.image);
+            const image = new Image({
+                user_id: userId,
+                file_name: req.files.image.name,
+                s3_bucket_path: data.key
+            });
+            await image.save().then(() => {
+                res.status(201);
+                res.send({"Status": 201, "Message": "Created a new image successfully."});
+            }).catch((err) => {
+                reject(console.error('Failed to create a new Image : ', err));
+            });                       
+        }                
+    }
+    else
+    {
+        res.status(400);
+        res.send({"Status": 400, "Message": "Only one Image can be uploaded."});
+        logger.info(`Only one image can be uploaded for the product`);
+        return;
+    } 
+}
+
 
 /* Ticket Components Start */
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, 
@@ -266,6 +332,7 @@ module.exports = {
   userExists,
   updateUser,
   canRenderEvent,
+  uploadProfile,
   paymentConfig,
   createPaymentIntent,
   saveTickets,

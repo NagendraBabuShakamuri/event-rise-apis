@@ -8,9 +8,11 @@ const passport = require("passport");
 const passportLocalMongoose = require('passport-local-mongoose');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require('mongoose-findorcreate');
+const upload = require("express-fileupload");
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use(upload());
 
 app.use(session({
   secret: "Our little secret.",
@@ -21,7 +23,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-const User = require("./api/models/User");
+const { User, Image } = require("./api/models/User");
 
 passport.use(User.createStrategy());
 
