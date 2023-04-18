@@ -251,7 +251,7 @@ const saveTickets = async (req, res) =>
 
 const getTickets = async (req, res) => 
 {
-    try {
+    try{
         const tickets = await Ticket.find();
         res.status(200).json(tickets);
     } catch (error) {
