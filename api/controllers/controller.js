@@ -4,6 +4,8 @@ const validator = require("email-validator");
 const bcrypt = require('bcrypt');
 const AWS = require("aws-sdk");
 const uuid = require('uuid');
+const Ticket = require('../models/ticketSchema');
+require("dotenv").config({ path: "./.env" });
 
 function isPasswordSame(user_pass, password){
     return new Promise((resolve, reject) => {
@@ -264,10 +266,74 @@ const uploadProfile = async (req, res) => {
     } 
 }
 
+
+/* Ticket Components Start */
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, 
+{
+    apiVersion: "2022-08-01",
+});
+
+const paymentConfig = (req, res) => 
+{
+  res.send({
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+  });
+}
+
+const createPaymentIntent = async (req, res) => 
+{
+  try 
+  {
+    const paymentIntent = await stripe.paymentIntents.create({
+      currency: "USD",
+      amount: req.body.amount*100,
+      automatic_payment_methods: { enabled: true },
+    });
+
+    res.send({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (e) {
+    return res.status(400).send({
+      error: {
+        message: e.message,
+      },
+    });
+  }
+}
+
+const saveTickets = async (req, res) => 
+{
+    const ticketData = req.body;
+    const newTicket = new Ticket(ticketData);
+
+    try {
+        await newTicket.save();
+        res.status(201).json(newTicket);
+    } catch (error) {
+        res.status(500).json({ message: 'Error creating ticket', error });
+    }
+}
+
+const getTickets = async (req, res) => 
+{
+    try{
+        const tickets = await Ticket.find();
+        res.status(200).json(tickets);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching tickets', error });
+    }
+}
+/* Ticket Components End */
+
 module.exports = {
   getUserByEmail,
   createUser,
   userExists,
   updateUser,
-  canRenderEvent
+  canRenderEvent,
+  paymentConfig,
+  createPaymentIntent,
+  saveTickets,
+  getTickets
 };
