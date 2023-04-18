@@ -2,8 +2,6 @@ const User = require('../models/User');
 const saltRounds = 10;
 const validator = require("email-validator");
 const bcrypt = require('bcrypt');
-const Ticket = require('../models/ticketSchema');
-require("dotenv").config({ path: "./.env" });
 
 function isPasswordSame(user_pass, password){
     return new Promise((resolve, reject) => {
@@ -200,6 +198,7 @@ const canRenderEvent = (req, res) => {
     }
 }
 
+
 /* Ticket Components Start */
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, 
 {
@@ -264,9 +263,5 @@ module.exports = {
   createUser,
   userExists,
   updateUser,
-  canRenderEvent,
-  paymentConfig,
-  createPaymentIntent,
-  saveTickets,
-  getTickets
+  canRenderEvent
 };
