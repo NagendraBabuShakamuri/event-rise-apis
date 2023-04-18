@@ -1,7 +1,7 @@
 const passport = require("passport");
 const express = require("express");
 const router = express.Router();
-const { userExists, getUserByEmail, createUser, updateUser, canRenderEvent } = require("../controllers/controller");
+const { userExists, getUserByEmail, createUser, updateUser, canRenderEvent, uploadProfile } = require("../controllers/controller");
 
 router.get("/health", (req, res) => {res.send("Hello world");})
 
@@ -31,5 +31,7 @@ router.get("/logout", function(req, res) {
         res.redirect('/health');
       });
 });
+
+router.post("/uploadProfile", uploadProfile);
 
 module.exports = router;
