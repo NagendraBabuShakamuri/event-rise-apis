@@ -17,8 +17,8 @@ variable "ssh_username" {
 source "amazon-ebs" "my-ami" {
   // profile         = "${var.profile}"
   region          = "${var.aws_region}"
-  ami_users       = [""]
-  ami_name        = "csye6225_${formatdate("YYYY_MM_DD_hh_mm_ss", timestamp())}"
+  ami_users       = ["679445653956"]
+  ami_name        = "info6150_${formatdate("YYYY_MM_DD_hh_mm_ss", timestamp())}"
   ami_description = "AMI for EventRise website"
   // ami_regions = [
   //   "us-east-1",
@@ -47,8 +47,8 @@ build {
   sources = ["source.amazon-ebs.my-ami"]
 
   provisioner "file" {
-    source      = "webapp.zip"
-    destination = "webapp.zip"
+    source      = "event-rise-apis.zip"
+    destination = "event-rise-apis.zip"
   }
 
   provisioner "shell" {
