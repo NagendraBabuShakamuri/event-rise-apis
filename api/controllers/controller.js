@@ -186,9 +186,22 @@ const updateUser = async (req, res) => {
     }    
 }
 
+const canRenderEvent = (req, res) => {
+    if(req.isAuthenticated())
+    {
+        res.status(200);
+        res.send({"Message": "worked"});
+    }
+    else
+    {
+        res.sendStatus(401);
+    }
+}
+
 module.exports = {
   getUserByEmail,
   createUser,
   userExists,
-  updateUser
+  updateUser,
+  canRenderEvent
 };
