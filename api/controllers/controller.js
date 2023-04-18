@@ -201,11 +201,9 @@ const canRenderEvent = (req, res) => {
 }
 
 /* Ticket Components Start */
-
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2022-08-01",
 });
-
 
 const paymentConfig = (req, res) => 
 {
@@ -239,24 +237,23 @@ const createPaymentIntent = async (req, res) =>
 const saveTickets = async (req, res) => {
     const ticketData = req.body;
     const newTicket = new Ticket(ticketData);
-  
-    try {
-      await newTicket.save();
-      res.status(201).json(newTicket);
-    } catch (error) {
-      res.status(500).json({ message: 'Error creating ticket', error });
-    }
-  }
 
-  const getTickets = async (req, res) => {
     try {
-      const tickets = await Ticket.find();
-      res.status(200).json(tickets);
+        await newTicket.save();
+        res.status(201).json(newTicket);
     } catch (error) {
-      res.status(500).json({ message: 'Error fetching tickets', error });
+        res.status(500).json({ message: 'Error creating ticket', error });
     }
-  }
+}
 
+const getTickets = async (req, res) => {
+    try {
+        const tickets = await Ticket.find();
+        res.status(200).json(tickets);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching tickets', error });
+    }
+}
 /* Ticket Components End */
 
 module.exports = {
