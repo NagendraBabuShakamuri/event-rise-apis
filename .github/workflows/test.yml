@@ -9,6 +9,9 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   CLIENT_ID: ${{ secrets.CLIENT_ID }}
   CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+  SOURCE_AMI: ${{ secrets.SOURCE_AMI }}
+  SSH_USERNAME: ${{ secrets.SSH_USR }}
 
 jobs:
   tests:
