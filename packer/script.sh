@@ -20,23 +20,25 @@ node -v
 
 npm -v
 
+sudo yum install yum install git -y
+
 pwd
 
-unzip webapp.zip -d webapp-main
+unzip event-rise-apis.zip -d event-rise-apis
 
-rm webapp.zip
+rm event-rise-apis.zip
 
-cd webapp-main/
+cd event-rise-apis/
 
 npm install
 
 cd ..
 
-sudo chmod 755 webapp-main
+sudo chmod 755 event-rise-apis
 
 ls -al
 
-sudo mkdir -p /var/log/csye6225/ && sudo touch /var/log/csye6225/webapp.log
+sudo mkdir -p /var/log/info6150/ && sudo touch /var/log/info6150/event-rise.log
 
 sudo cat >> cloudwatch-config.json << 'EOF'
 {
@@ -49,9 +51,9 @@ sudo cat >> cloudwatch-config.json << 'EOF'
           "files": {
               "collect_list": [
                   {
-                      "file_path": "/var/log/csye6225/webapp.log",
-                      "log_group_name": "csye6225",
-                      "log_stream_name": "webapp"
+                      "file_path": "/var/log/info6150/event-rise.log",
+                      "log_group_name": "info6150",
+                      "log_stream_name": "event-rise"
                   }
               ]
           }
@@ -74,6 +76,6 @@ sudo mkdir -p /opt/aws/amazon-cloudwatch-agent/etc/
 
 sudo mv "cloudwatch-config.json" "/opt/aws/amazon-cloudwatch-agent/etc/"
 
-sudo chown ec2-user /var/log/csye6225/webapp.log
+sudo chown ec2-user /var/log/info6150/event-rise.log
 
 sudo yum install amazon-cloudwatch-agent -y
