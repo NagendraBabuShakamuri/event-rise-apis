@@ -332,6 +332,7 @@ module.exports = {
   userExists,
   updateUser,
   canRenderEvent,
+  uploadProfile,
   paymentConfig,
   createPaymentIntent,
   saveTickets,
