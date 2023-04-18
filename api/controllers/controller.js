@@ -2,6 +2,8 @@ const User = require('../models/User');
 const saltRounds = 10;
 const validator = require("email-validator");
 const bcrypt = require('bcrypt');
+const Ticket = require('../models/ticketSchema');
+require("dotenv").config({ path: "./.env" });
 
 function isPasswordSame(user_pass, password){
     return new Promise((resolve, reject) => {
@@ -263,5 +265,9 @@ module.exports = {
   createUser,
   userExists,
   updateUser,
-  canRenderEvent
+  canRenderEvent,
+  paymentConfig,
+  createPaymentIntent,
+  saveTickets,
+  getTickets
 };
