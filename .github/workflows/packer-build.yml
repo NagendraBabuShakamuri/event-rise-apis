@@ -25,7 +25,7 @@ jobs:
       - name: Zip Git Repository
         uses: montudor/action-zip@v1
         with:
-          args: zip -r event-apis.zip .
+          args: zip -r event-rise-apis.zip .
 
       - name: Packer build
         id: packer_build
