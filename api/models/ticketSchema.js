@@ -1,9 +1,8 @@
 const mongoose = require('mongoose');
 
 const TicketSchema = new mongoose.Schema({
-    ticketID: { type: Integer, unique: true },
-    user_id: Integer,
-    event_id: Integer,
+    user_id: String,
+    event_id: String,
     payment_type: String,
     created_time: Date,
   });

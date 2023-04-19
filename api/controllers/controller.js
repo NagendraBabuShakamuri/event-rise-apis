@@ -5,9 +5,8 @@ const validator = require("email-validator");
 const bcrypt = require('bcrypt');
 const AWS = require("aws-sdk");
 const uuid = require('uuid');
-const Ticket = require('../models/TicketSchema');
-const { events } = require('../models/TicketSchema');
 const nodemailer = require("nodemailer");
+const Ticket = require('../models/TicketSchema');
 const Events = require('../models/Events');
 require("dotenv").config({ path: "./.env" });
 
