@@ -1,7 +1,6 @@
 const passport = require("passport");
 const express = require("express");
 const router = express.Router();
-
 const { 
     userExists, 
     getUserByEmail, 
@@ -13,7 +12,11 @@ const {
     paymentConfig, 
     createPaymentIntent, 
     saveTickets, 
-    getTickets 
+    getTickets,
+    getUpcomingEvents,
+    getEventDetailsByEventId,
+    sendEmailToUser
+
 } = require("../controllers/controller");
 
 const { createEvent } = require("../controllers/createEvents.js");
@@ -39,6 +42,12 @@ router.post("/create-payment-intent", createPaymentIntent);
 router.post('/api/tickets', saveTickets);
 
 router.get('/api/tickets', getTickets);
+
+router.get('/api/upcomingEvents', getUpcomingEvents);
+
+router.get('/api/events/:eventId', getEventDetailsByEventId);
+
+router.post('/api/sendEmail', sendEmailToUser);
 
 router.get("/auth/google/events", passport.authenticate('google', { failureRedirect: "/health?error=authentication_failed"}),
 function(req, res) {

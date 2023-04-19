@@ -6,7 +6,10 @@ const bcrypt = require('bcrypt');
 const AWS = require("aws-sdk");
 const uuid = require('uuid');
 const Ticket = require('../models/ticketSchema');
-require("dotenv");
+const { events } = require('../models/ticketSchema');
+const nodemailer = require("nodemailer");
+const Events = require('../models/Events');
+require("dotenv").config({ path: "./.env" });
 
 function isPasswordSame(user_pass, password){
     return new Promise((resolve, reject) => {
@@ -219,6 +222,7 @@ function uploadImage(image)
         s3.upload(params, (err, data) => {
             if(err)
             {
+                logger.error(`${err}`);
                 reject(err);
             }
             else 
@@ -355,6 +359,111 @@ const getTickets = async (req, res) =>
 }
 /* Ticket Components End */
 
+const getUpcomingEvents = async (req, res) => {
+    try {
+        const currentDate = new Date();
+        const nextFiveDaysDate = new Date(currentDate.getTime() + 5 * 24 * 60 * 60 * 1000);
+
+        const upcomingEvents = await Events.find({ event_date: { $gte: currentDate, $lte: nextFiveDaysDate } });
+        if (upcomingEvents.length === 0) {
+            return res.status(204).json ({message : 'No Upcoming events in the next 5 days'});
+        } else {
+            return res.status(200).json(upcomingEvents);
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Error fetching upcoming event details', error });
+    }
+}
+
+
+/* Upcoming Event section ends */
+
+const getEventDetailsByEventId = async(req,res) => {
+
+    try {
+        const eventId =req.params.eventId;
+        if (!eventId) {
+            return res.status(400).send("Event ID cannot be null");
+        }
+        if (typeof eventId !== "string") {
+            return res.status(400).send("Event ID must be a string");
+          }
+        const eventDetails = await Events.findOne({ event_id: eventId });
+
+        if (!eventDetails) {
+            return res.status(404).send("Event not found");
+          }
+        res.status(200).json(eventDetails);
+
+    } catch (error){
+        console.error(error);
+       res.status(500).json({error : 'Error fetching event details for the given eventID',error});
+
+    }
+}
+
+/* end of get eventDetails from eventId */
+
+const sendEmailToUser = async(req,res) => {
+
+    const ticketID =req.body.ticketID;
+
+    try{
+        const ticket =await Ticket.findOne({ticketID: ticketID});
+        if(!ticket){
+            return res.status(404).send("ticket not found with the given ticket id");
+        }
+        const event =await Events.findOne({event_id : ticket.eventID});
+        if(!event){
+            return res.status(404).send("Event not Found with the given ticket id");
+        }
+        const user= await User.findOne({user_id : ticket.userID});
+        if(!user){
+            return res.status(404).send("user not found");
+        }
+
+        const email =user.email;
+
+        if(!email){
+            return res.status(404).send("email address not found in User database");
+        }
+
+        const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: {
+        user: "dineshitendulkar@gmail.com",
+        pass: "uuqqtmmuiqohdeyq",
+      },
+    });
+
+    const mailOptions = {
+    from: "dineshitendulkar@gmail.com",
+    to: email,
+    subject: "Ticket Details",
+    html: `<p>Hi ${user.name},</p><p>Your ticket for the event ${event.title} is confirmed.</p><p>Details:</p><p>Ticket ID: ${ticket.ticketID}</p><p>Event Title: ${event.title}</p><p>Event Date: ${event.event_date.toDateString()}</p><p>Location: ${event.location}</p><p>Payment Type: ${ticket.paymentType}</p>`,
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error(error);
+          return res.status(500).json({ message: "Error sending email", error });
+        }
+        console.log("Email sent:", info.response);
+        res.status(200).json({ message: "Email sent" });
+      });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching ticket details", error });
+      }
+}
+/*end of send tickets to user*/
+
+
+
+
 module.exports = {
   getUserByEmail,
   createUser,
@@ -366,5 +475,8 @@ module.exports = {
   paymentConfig,
   createPaymentIntent,
   saveTickets,
-  getTickets
+  getTickets,
+  getUpcomingEvents,
+  getEventDetailsByEventId,
+  sendEmailToUser
 };
