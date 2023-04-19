@@ -229,7 +229,8 @@ function uploadImage(image)
     });    
 }
 
-const uploadProfile = async (req, res) => {
+const uploadProfileImage = async (req, res) => {
+    const email = req.body.email;
     let isObject = function(a) {
         return (!!a) && (a.constructor === Object);
     };
@@ -244,14 +245,15 @@ const uploadProfile = async (req, res) => {
         else
         {
             let data = await uploadImage(req.files.image);
+            const user = await User.findOne({ email: email });
             const image = new Image({
-                user_id: userId,
+                user_id: user._id,
                 file_name: req.files.image.name,
                 s3_bucket_path: data.key
             });
             await image.save().then(() => {
                 res.status(201);
-                res.send({"Status": 201, "Message": "Created a new image successfully."});
+                res.send({"Status": 201, "Message": "Uploaded the profile pic successfully."});
             }).catch((err) => {
                 reject(console.error('Failed to create a new Image : ', err));
             });                       
@@ -260,10 +262,37 @@ const uploadProfile = async (req, res) => {
     else
     {
         res.status(400);
-        res.send({"Status": 400, "Message": "Only one Image can be uploaded."});
-        logger.info(`Only one image can be uploaded for the product`);
+        res.send({"Status": 400, "Message": "Only one image can be uploaded."});
         return;
     } 
+}
+
+function deleteImage(key)
+{
+    return new Promise(async (resolve, reject) => {
+        AWS.config.update({
+            region: process.env.AWS_DEFAULT_REGION
+        });
+        var s3 = new AWS.S3();
+        var params = {  Bucket: process.env.S3_BUCKET, Key: key };
+
+        s3.deleteObject(params, function(err, data) {
+        if (err)
+        {
+            reject(err);            
+        }            
+        else     
+            resolve();
+        });
+    });
+}
+
+const deleteProfileImage = async (req, res) => {
+    const email = req.body.email;
+    const user = await User.findOne({ email: email });
+    const image = await Image.findOne({ _id: user._id });
+    await deleteImage(image.s3_bucket_path);
+    res.sendStatus(204);
 }
 
 
@@ -332,7 +361,8 @@ module.exports = {
   userExists,
   updateUser,
   canRenderEvent,
-  uploadProfile,
+  uploadProfileImage,
+  deleteProfileImage,
   paymentConfig,
   createPaymentIntent,
   saveTickets,
