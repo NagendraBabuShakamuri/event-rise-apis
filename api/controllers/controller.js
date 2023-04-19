@@ -1,11 +1,12 @@
-const { User, Image } = require('../models/User');
+const User = require('../models/User');
+const Image = require('../models/ProfileImage');
 const saltRounds = 10;
 const validator = require("email-validator");
 const bcrypt = require('bcrypt');
 const AWS = require("aws-sdk");
 const uuid = require('uuid');
 const Ticket = require('../models/ticketSchema');
-require("dotenv").config({ path: "./.env" });
+require("dotenv");
 
 function isPasswordSame(user_pass, password){
     return new Promise((resolve, reject) => {
@@ -218,7 +219,6 @@ function uploadImage(image)
         s3.upload(params, (err, data) => {
             if(err)
             {
-                logger.error(`${err}`);
                 reject(err);
             }
             else 

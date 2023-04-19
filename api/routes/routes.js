@@ -15,6 +15,7 @@ const {
     saveTickets, 
     getTickets 
 } = require("../controllers/controller");
+
 const { createEvent } = require("../controllers/createEvents.js");
 
 router.get("/health", (req, res) => {res.send("Hello world");})
