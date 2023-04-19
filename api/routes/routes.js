@@ -1,7 +1,9 @@
 const passport = require("passport");
 const express = require("express");
 const router = express.Router();
+
 const { userExists, getUserByEmail, createUser, updateUser, canRenderEvent, uploadProfile, paymentConfig, createPaymentIntent, saveTickets, getTickets } = require("../controllers/controller");
+const { createEvent } = require("../controllers/createEvents.js");
 
 router.get("/health", (req, res) => {res.send("Hello world");})
 
@@ -41,5 +43,7 @@ router.get("/logout", function(req, res) {
 });
 
 router.post("/uploadProfile", uploadProfile);
+
+router.post("/createEvent", createEvent);
 
 module.exports = router;

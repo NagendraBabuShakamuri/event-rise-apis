@@ -10,7 +10,10 @@ const eventSchema = new mongoose.Schema({
     event_date: Date,
     ticket_price: Number,
     event_category: String,
-    tickets_booked: Number
+    tickets_booked: Number,
+    status: String,
+    image_path: String,
+    image_name: String
 });
 
 const Events = mongoose.model("Events", eventSchema);
