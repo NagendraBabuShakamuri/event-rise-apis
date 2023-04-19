@@ -22,6 +22,8 @@ npm -v
 
 sudo yum install yum install git -y
 
+git clone https://github.com/nagavenkateshgavini/eventrise.git
+
 pwd
 
 unzip event-rise-apis.zip -d event-rise-apis
@@ -35,6 +37,8 @@ npm install
 cd ..
 
 sudo chmod 755 event-rise-apis
+
+sudo chmod 755 eventrise
 
 ls -al
 
