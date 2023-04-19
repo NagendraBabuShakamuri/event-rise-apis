@@ -1,6 +1,4 @@
-const express = require("express");
 const mongoose = require("mongoose");
-const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");
 const findOrCreate = require('mongoose-findorcreate');
 
@@ -58,15 +56,4 @@ userSchema.plugin(findOrCreate);
 
 const User = new mongoose.model("User", userSchema);
 
-const imageSchema = new mongoose.Schema({
-  user_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  file_name: String,
-  s3_bucket_path: String
-});
-
-const Image = new mongoose.model("Image", imageSchema);
-
-module.exports = { User, Image };
+module.exports = User;

@@ -23,7 +23,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-const { User, Image } = require("./api/models/User");
+const User = require("./api/models/User");
 
 passport.use(User.createStrategy());
 
