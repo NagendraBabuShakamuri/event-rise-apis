@@ -598,6 +598,34 @@ const sendEmailToEventCreator = async(req,res) => {
     }
 }
 
+/*End of sendEmailToEventCreator API */
+
+const getHostedEvents = async(req,res) => {
+
+    try{
+        const userId= req.params.userId;
+        const events = await Events.find({hosted_by : { $in: userId }}).sort({event_date : 1});
+        console.log(events);
+
+        const eventList = events.map((event) => ({
+            event_id: event.event_id,
+            title: event.title,
+            description: event.description,
+            location: event.location,
+            event_date: event.event_date,
+            image_path: event.image_path,
+            status: event.status,
+          }));
+        console.log(eventList);
+        res.status(200).json({eventList});
+
+    } catch(err){
+        res.status(500).json({message : "error fetching hosted event details",err});
+    }
+}
+
+
+
 
 module.exports = {
   getUserByEmail,
@@ -617,5 +645,6 @@ module.exports = {
   getDetailsByEventCategory,
   getAttendedEvents,
   getUpcomingEventsByUserId,
-  sendEmailToEventCreator
+  sendEmailToEventCreator,
+  getHostedEvents
 };
