@@ -30,5 +30,8 @@
     "stripe": "^8.191.0",
     "supertest": "^6.3.3",
     "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
   }
 }
