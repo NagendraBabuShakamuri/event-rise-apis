@@ -52,8 +52,24 @@ const updateEvent = async (req, res) => {
     }
 }
 
+const deleteEvent = async (req, res) => {
+    console.log("delete event api called", req.body)
+    let rec = await Event.findOne({'event_id': req.body.event_id})
+    if(!rec){
+        res.status(404).send(JSON.stringify({"message": "event id not found"}))
+    }
+    try{
+        let rec = await Event.deleteOne({'event_id': req.body.event_id})
+        res.send(JSON.stringify({"message": "event deleted successfully"}))
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).send(JSON.stringify({message: "error", error: e}))
+    }
+}
 module.exports = {
     createEvent,
     getEvents,
-    updateEvent
+    updateEvent,
+    deleteEvent
 };

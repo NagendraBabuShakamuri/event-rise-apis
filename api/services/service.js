@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
+require('dotenv').config()
 
-mongoose.connect("mongodb://localhost:27017/web", { useNewUrlParser: true });
+mongoose.connect(process.env.MONGO_CONN_STR, { useNewUrlParser: true });
 
 mongoose.connection.on("open", async function () {
   try {
