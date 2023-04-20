@@ -15,7 +15,9 @@ const {
     getTickets,
     getUpcomingEvents,
     getEventDetailsByEventId,
-    sendEmailToUser
+    sendEmailToUser,
+    getDetailsByEventCategory,
+    getAttendedEvents
 
 } = require("../controllers/controller");
 
@@ -53,6 +55,14 @@ router.get('/api/upcomingEvents', getUpcomingEvents);
 router.get('/api/events/:eventId', getEventDetailsByEventId);
 
 router.post('/api/sendEmail', sendEmailToUser);
+
+router.get('/api/eventCategory/:category', getDetailsByEventCategory);
+
+router.get('/api/attendedEvents/:userId',getAttendedEvents );
+
+router.get('/api/eventCategory/:category', getDetailsByEventCategory);
+
+router.get('/api/attendedEvents/:userId',getAttendedEvents );
 
 router.get(
   "/auth/google/events",

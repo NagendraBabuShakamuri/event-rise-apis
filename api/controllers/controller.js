@@ -8,8 +8,10 @@ const uuid = require("uuid");
 const Ticket = require("../models/TicketSchema");
 const { events } = require("../models/TicketSchema");
 const nodemailer = require("nodemailer");
-const Events = require("../models/Events");
-require("dotenv").config();
+const Events = require('../models/Events');
+const mongoose = require('mongoose');
+const qr = require('qr-image');
+require("dotenv").config({ path: "./.env" });
 
 function isPasswordSame(user_pass, password) {
   return new Promise((resolve, reject) => {
@@ -372,16 +374,11 @@ const getUpcomingEvents = async (req, res) => {
 
 /* Upcoming Event section ends */
 
-const getEventDetailsByEventId = async (req, res) => {
-  try {
-    const eventId = req.params.eventId;
-    if (!eventId) {
-      return res.status(400).send("Event ID cannot be null");
-    }
-    if (typeof eventId !== "string") {
-      return res.status(400).send("Event ID must be a string");
-    }
-    const eventDetails = await Events.findOne({ event_id: eventId });
+const getEventDetailsByEventId = async(req,res) => {
+
+    try {
+        const eventId =req.params.eventId;
+        const eventDetails = await Events.findOne({ event_id: eventId });
 
     if (!eventDetails) {
       return res.status(404).send("Event not found");
@@ -398,22 +395,26 @@ const getEventDetailsByEventId = async (req, res) => {
 
 /* end of get eventDetails from eventId */
 
-const sendEmailToUser = async (req, res) => {
-  const ticketID = req.body.ticketID;
+const sendEmailToUser = async(req,res) => {
 
-  try {
-    const ticket = await Ticket.findOne({ ticketID: ticketID });
-    if (!ticket) {
-      return res.status(404).send("ticket not found with the given ticket id");
-    }
-    const event = await Events.findOne({ event_id: ticket.eventID });
-    if (!event) {
-      return res.status(404).send("Event not Found with the given ticket id");
-    }
-    const user = await User.findOne({ user_id: ticket.userID });
-    if (!user) {
-      return res.status(404).send("user not found");
-    }
+    //as of now ticketID params  defined below we are passing user_id value present in Ticket database
+
+    const ticketID =req.body.ticketID;
+    console.log(ticketID);
+
+    try{
+        const ticket = await Ticket.findOne({ user_id : ticketID });
+        if(!ticket){
+            return res.status(404).send("ticket not found with the given ticket id");
+        }
+        const event =await Events.findOne({event_id : ticket.eventID});
+        if(!event){
+            return res.status(404).send("Event not Found with the given ticket id");
+        }
+        const user= await User.findOne({user_id : ticket.userID});
+        if(!user){
+            return res.status(404).send("user not found");
+        }
 
     const email = user.email;
 
@@ -431,20 +432,22 @@ const sendEmailToUser = async (req, res) => {
       },
     });
 
+    const qrCode = qr.imageSync(`Ticket ID: ${ticket.ticketID}`, { type: 'png' });
+    const attachments = [
+      {
+        filename: 'qr_code.png',
+        content: qrCode,
+        cid: 'qr_code_cid'
+      }
+    ];
+
     const mailOptions = {
-      from: "dineshitendulkar@gmail.com",
-      to: email,
-      subject: "Ticket Details",
-      html: `<p>Hi ${user.name},</p><p>Your ticket for the event ${
-        event.title
-      } is confirmed.</p><p>Details:</p><p>Ticket ID: ${
-        ticket.ticketID
-      }</p><p>Event Title: ${
-        event.title
-      }</p><p>Event Date: ${event.event_date.toDateString()}</p><p>Location: ${
-        event.location
-      }</p><p>Payment Type: ${ticket.paymentType}</p>`,
-    };
+    from: "dineshitendulkar@gmail.com",
+    to: email,
+    subject: "Ticket Details",
+    html: `<p>Hi ${user.name},</p><p>Your ticket for the event ${event.title} is confirmed.</p><p>Details:</p><p>Ticket ID: ${ticket._id}</p><p>Event Title: ${event.title}</p><p>Event Date: ${event.event_date.toDateString()}</p><p>Location: ${event.location}</p><p>Payment Type: ${ticket.paymentType}</p><img src="cid:qr_code_cid" alt="QR Code"/>`,
+      attachments: attachments,
+      };
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
@@ -461,6 +464,66 @@ const sendEmailToUser = async (req, res) => {
 };
 /*end of send tickets to user*/
 
+const getDetailsByEventCategory =async(req, res) => {
+    try{
+        const category =req.params.category;
+        const events = await Events.find(
+            { event_category: category , status: 'approved' },
+            { event_id : 1,title: 1, description: 1, location: 1, event_date: 1, status: 1, image_path: 1,  _id: 0 }
+          );
+        console.log(events);
+        if(events.length  === 0){
+            return res.status(404).send("Event not found with given event_category or with approved status");
+        }
+        res.status(200).json(events);
+    } catch(error){
+        console.error(error);
+    res.status(500).json({ message: 'Error fetching events', error });
+    }
+}
+/* end of get event details by Event Category */
+
+const getAttendedEvents = async(req,res) => {
+    try{
+        const userId=req.params.userID;
+       const tickets = await Ticket.find({ userId }).sort({ created_time: -1 }).limit(5).exec();
+       console.log(tickets);
+
+       const eventIds= tickets.map((ticket) => ticket.event_id);
+       const events= await Events.find({ event_id: { $in: eventIds } });
+
+       // Create an array of event objects with only the desired fields
+    const eventList = events.map((event) => {
+        return {
+          event_id: event.event_id,
+          title: event.title,
+          description: event.description,
+          location: event.location,
+          event_date: event.event_date,
+          image_path: event.image_path,
+          status: event.status,
+        };
+      });
+      res.status(200).json(eventList);
+    }catch (err) {
+        console.error(err);
+        res.status(500).json({message : 'Error fetching attended event details', err});
+      }
+}
+
+/*end of get Attended events*/
+
+
+
+
+
+
+
+
+
+
+
+
 module.exports = {
   getUserByEmail,
   createUser,
@@ -476,4 +539,6 @@ module.exports = {
   getUpcomingEvents,
   getEventDetailsByEventId,
   sendEmailToUser,
+  getDetailsByEventCategory,
+  getAttendedEvents
 };
