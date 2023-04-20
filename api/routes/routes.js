@@ -21,19 +21,24 @@ const {
 
 const { createEvent, getEvents, updateEvent } = require("../controllers/eventsController.js");
 
-router.get("/health", (req, res) => {res.send("Hello world");})
+router.get("/health", (req, res) => {
+  res.send("Hello world");
+});
 
 router.get("/userProfile", getUserByEmail);
 
 router.post("/createUser", createUser);
 
-router.get("/login", userExists);
+router.post("/login", userExists);
 
 router.put("/update", updateUser);
 
 router.get("/events", canRenderEvent);
 
-router.get("/auth/google", passport.authenticate('google', { scope: ["profile", "email"] }));
+router.get(
+  "/auth/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
 
 router.get("/config", paymentConfig);
 
@@ -49,19 +54,26 @@ router.get('/api/events/:eventId', getEventDetailsByEventId);
 
 router.post('/api/sendEmail', sendEmailToUser);
 
-router.get("/auth/google/events", passport.authenticate('google', { failureRedirect: "/health?error=authentication_failed"}),
-function(req, res) {
-  // Successful authentication, redirect to the page.
+router.get(
+  "/auth/google/events",
+  passport.authenticate("google", {
+    failureRedirect: "/health?error=authentication_failed",
+  }),
+  function (req, res) {
+    // Successful authentication, redirect to the page.
     console.log(req.isAuthenticated());
     res.redirect("/events");
-});
+  }
+);
 
-router.get("/logout", function(req, res) {
-    req.logout(function(err) {
-        if (err) { return next(err); }
-        console.log(req.isAuthenticated());
-        res.redirect('/health');
-      });
+router.get("/logout", function (req, res) {
+  req.logout(function (err) {
+    if (err) {
+      return next(err);
+    }
+    console.log(req.isAuthenticated());
+    res.redirect("/health");
+  });
 });
 
 router.post("/uploadProfileImage", uploadProfileImage);
