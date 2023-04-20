@@ -403,15 +403,17 @@ const sendEmailToUser = async(req,res) => {
     console.log(ticketID);
 
     try{
-        const ticket = await Ticket.findOne({ user_id : ticketID });
+        const ticket = await Ticket.findOne({_id : ticketID });
+        console.log(ticket);
         if(!ticket){
             return res.status(404).send("ticket not found with the given ticket id");
         }
-        const event =await Events.findOne({event_id : ticket.eventID});
+        const event =await Events.findOne({event_id : ticket.event_id});
+        console.log(event);
         if(!event){
             return res.status(404).send("Event not Found with the given ticket id");
         }
-        const user= await User.findOne({user_id : ticket.userID});
+        const user= await User.findOne({_id : ticket.user_id});
         if(!user){
             return res.status(404).send("user not found");
         }
@@ -555,8 +557,11 @@ const sendEmailToEventCreator = async(req,res) => {
     
     try {
         const eventId= req.params.eventId;
+        console.log(eventId);
         const events = await Events.findOne({ event_id: eventId });
-        const user = await User.findOne({ user_id: events.hosted_by });
+        console.log(events);
+        const user = await User.findOne({_id: events.hosted_by });
+        console.log(user);
         const email = user.email;
 
         if (!email) {
@@ -581,20 +586,17 @@ const sendEmailToEventCreator = async(req,res) => {
         
             transporter.sendMail(mailOptions, (error, info) => {
               if (error) {
-                console.error(error);
+                //console.error(error);
                 return res.status(500).json({ message: "Error sending email", error });
               }
               console.log("Email sent:", info.response);
               res.status(200).json({ message: "Email sent" });
             });
     } catch (err){
-        console.error(error);
-        res.status(500).json({ message: "Error fetching ticket details", error });
+        //console.error(error);
+        res.status(500).json({ message: "Error fetching ticket details", err });
     }
 }
-
-
-
 
 
 module.exports = {
