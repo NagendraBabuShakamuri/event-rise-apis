@@ -485,10 +485,8 @@ const getDetailsByEventCategory =async(req, res) => {
 
 const getAttendedEvents = async(req,res) => {
     try{
-        const userId=req.params.userID;
-       const tickets = await Ticket.find({ userId }).sort({ created_time: -1 }).limit(5).exec();
-       console.log(tickets);
-
+        const userId=req.params.userId;
+       const tickets = await Ticket.find({ user_id:  userId }).sort({ created_time: -1 }).limit(5);
        const eventIds= tickets.map((ticket) => ticket.event_id);
        const events= await Events.find({ event_id: { $in: eventIds } });
 
@@ -513,12 +511,87 @@ const getAttendedEvents = async(req,res) => {
 
 /*end of get Attended events*/
 
+const getUpcomingEventsByUserId = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    console.log(userId);
 
+    const userTickets = await Ticket.find({user_id : userId});
+    console.log(userTickets);
 
+    const eventIds = userTickets.map((ticket) => ticket.event_id);
+    console.log(eventIds);
 
+    const currentDate = new Date();
+    const nextFiveDaysDate = new Date(currentDate.getTime() + 5 * 24 * 60 * 60 * 1000);
 
+    const upcomingEvents = await Events.find({
+      event_id: { $in: eventIds },
+      event_date: { $gte: currentDate, $lte: nextFiveDaysDate },
+    })
+      .sort({ event_date: 1 })
+      .limit(5);
 
+    const eventList = upcomingEvents.map((event) => ({
+      event_id: event.event_id,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      event_date: event.event_date,
+      image_path: event.image_path,
+      status: event.status,
+    }));
 
+    res.status(200).json(eventList);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error fetching upcoming event details', err });
+  }
+};
+
+/* end of upcomingeventsbyuserid */
+
+const sendEmailToEventCreator = async(req,res) => {
+    
+    try {
+        const eventId= req.params.eventId;
+        const events = await Events.findOne({ event_id: eventId });
+        const user = await User.findOne({ user_id: events.hosted_by });
+        const email = user.email;
+
+        if (!email) {
+            return res.status(404).send("email address not found in User database");
+          }
+      
+          const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false,
+            auth: {
+              user: "dineshitendulkar@gmail.com",
+              pass: "uuqqtmmuiqohdeyq",
+            },
+          });
+          const mailOptions = {
+            from: "dineshitendulkar@gmail.com",
+            to: email,
+            subject: "Event Details",
+            html: `<p>Hi ${user.name},</p><p>Your Event  ${events.title} is Approved.</p><p>Details:</p><p>Event ID: ${events.event_id}<p>Event Date: ${events.event_date.toDateString()}</p><p>Location: ${events.location}</p>`
+              };
+        
+            transporter.sendMail(mailOptions, (error, info) => {
+              if (error) {
+                console.error(error);
+                return res.status(500).json({ message: "Error sending email", error });
+              }
+              console.log("Email sent:", info.response);
+              res.status(200).json({ message: "Email sent" });
+            });
+    } catch (err){
+        console.error(error);
+        res.status(500).json({ message: "Error fetching ticket details", error });
+    }
+}
 
 
 
@@ -540,5 +613,7 @@ module.exports = {
   getEventDetailsByEventId,
   sendEmailToUser,
   getDetailsByEventCategory,
-  getAttendedEvents
+  getAttendedEvents,
+  getUpcomingEventsByUserId,
+  sendEmailToEventCreator
 };
