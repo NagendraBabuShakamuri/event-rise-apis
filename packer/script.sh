@@ -24,6 +24,12 @@ sudo yum install yum install git -y
 
 git clone https://github.com/nagavenkateshgavini/eventrise.git
 
+cd eventrise
+
+npm install
+
+cd ..
+
 pwd
 
 unzip event-rise-apis.zip -d event-rise-apis
