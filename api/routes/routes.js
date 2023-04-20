@@ -19,7 +19,7 @@ const {
 
 } = require("../controllers/controller");
 
-const { createEvent } = require("../controllers/createEvents.js");
+const { createEvent, getEvents, updateEvent } = require("../controllers/eventsController.js");
 
 router.get("/health", (req, res) => {res.send("Hello world");})
 
@@ -66,7 +66,12 @@ router.get("/logout", function(req, res) {
 
 router.post("/uploadProfileImage", uploadProfileImage);
 
+// Event APIs
 router.post("/createEvent", createEvent);
+
+router.get("/getEvents", getEvents);
+
+router.put("/updateEvent", updateEvent);
 
 router.delete("/deleteProfileImage", deleteProfileImage);
 

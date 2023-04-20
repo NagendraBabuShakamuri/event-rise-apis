@@ -11,7 +11,10 @@ const eventSchema = new mongoose.Schema({
     ticket_price: Number,
     event_category: String,
     tickets_booked: Number,
-    status: String,
+    status: {
+        type: String,
+        enum: ['pending', 'approved']
+    },
     image_path: String,
     image_name: String
 });
