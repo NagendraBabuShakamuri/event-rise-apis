@@ -1,14 +1,14 @@
-const User = require('../models/User');
-const Image = require('../models/ProfileImage');
+const User = require("../models/User");
+const Image = require("../models/ProfileImage");
 const saltRounds = 10;
 const validator = require("email-validator");
 const bcrypt = require("bcrypt");
 const AWS = require("aws-sdk");
-const uuid = require('uuid');
-const Ticket = require('../models/TicketSchema');
-const { events } = require('../models/TicketSchema');
+const uuid = require("uuid");
+const Ticket = require("../models/TicketSchema");
+const { events } = require("../models/TicketSchema");
 const nodemailer = require("nodemailer");
-const Events = require('../models/Events');
+const Events = require("../models/Events");
 require("dotenv").config({ path: "./.env" });
 
 function isPasswordSame(user_pass, password) {
@@ -49,8 +49,7 @@ const getUserByEmail = async (req, res) => {
 const userExists = async (req, res) => {
   const email = req.body.email;
   let password = req.body.password;
-  let count = Object.keys(req.body).length;
-  if (req.body) {
+  if (email != undefined && password != undefined) {
     const foundUser = await User.findOne({ email: email });
     console.log("user", foundUser);
     if (foundUser) {
@@ -94,7 +93,8 @@ const createUser = async (req, res) => {
   const zip = req.body.zip;
   const country = req.body.country;
 
-  if (req.body) {
+  let count = Object.keys(req.body).length;
+  if (count === 12) {
     let found = await User.findOne({ email: email });
     if (!found) {
       password = await bcrypt.hash(password, saltRounds);
@@ -200,120 +200,114 @@ const canRenderEvent = (req, res) => {
   }
 };
 
-function uploadImage(image)
-{
-    return new Promise(async (resolve, reject) => {
-        AWS.config.update({
-            region: process.env.AWS_DEFAULT_REGION
-        });
-        const s3 = new AWS.S3();
-        const fileContent = Buffer.from(image.data, 'binary');
-        const params = {
-            Bucket: process.env.S3_BUCKET,
-            Key: uuid.v4() + "/" + image.name,
-            Body: fileContent
-        }
-        s3.upload(params, (err, data) => {
-            if(err)
-            {
-                logger.error(`${err}`);
-                reject(err);
-            }
-            else 
-            {
-                resolve(data);
-            }
-        });
-    });    
-}
-
-const uploadProfileImage = async (req, res) => {
-    const email = req.body.email;
-    let isObject = function(a) {
-        return (!!a) && (a.constructor === Object);
-    };
-    if(isObject(req.files.image))
-    {
-        if(req.files.image.mimetype !== 'image/jpeg' && req.files.image.mimetype !== 'image/jpg' && req.files.image.mimetype === 'image/png')
-        {
-            res.status(400);
-            res.send({"Status": 400, "Message": "Only the file formats JPG, JPEG and PNG are allowed."});
-            return;
-        }
-        else
-        {
-            let data = await uploadImage(req.files.image);
-            const user = await User.findOne({ email: email });
-            const image = new Image({
-                user_id: user._id,
-                file_name: req.files.image.name,
-                s3_bucket_path: data.key
-            });
-            await image.save().then(() => {
-                res.status(201);
-                res.send({"Status": 201, "Message": "Uploaded the profile pic successfully."});
-            }).catch((err) => {
-                reject(console.error('Failed to create a new Image : ', err));
-            });                       
-        }                
-    }
-    else
-    {
-        res.status(400);
-        res.send({"Status": 400, "Message": "Only one image can be uploaded."});
-        return;
-    } 
-}
-
-function deleteImage(key)
-{
-    return new Promise(async (resolve, reject) => {
-        AWS.config.update({
-            region: process.env.AWS_DEFAULT_REGION
-        });
-        var s3 = new AWS.S3();
-        var params = {  Bucket: process.env.S3_BUCKET, Key: key };
-
-        s3.deleteObject(params, function(err, data) {
-        if (err)
-        {
-            reject(err);            
-        }            
-        else     
-            resolve();
-        });
+function uploadImage(image) {
+  return new Promise(async (resolve, reject) => {
+    AWS.config.update({
+      region: process.env.AWS_DEFAULT_REGION,
     });
-}
-
-const deleteProfileImage = async (req, res) => {
-    const email = req.body.email;
-    const user = await User.findOne({ email: email });
-    const image = await Image.findOne({ _id: user._id });
-    await deleteImage(image.s3_bucket_path);
-    res.sendStatus(204);
-}
-
-
-/* Ticket Components Start */
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, 
-{
-    apiVersion: "2022-08-01",
-});
-
-const paymentConfig = (req, res) => 
-{
-  res.send({
-    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+    const s3 = new AWS.S3();
+    const fileContent = Buffer.from(image.data, "binary");
+    const params = {
+      Bucket: process.env.S3_BUCKET,
+      Key: uuid.v4() + "/" + image.name,
+      Body: fileContent,
+    };
+    s3.upload(params, (err, data) => {
+      if (err) {
+        logger.error(`${err}`);
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
   });
 }
 
-const createPaymentIntent = async (req, res) => 
-{
-  try 
-  {
+const uploadProfileImage = async (req, res) => {
+  const email = req.body.email;
+  let isObject = function (a) {
+    return !!a && a.constructor === Object;
+  };
+  if (isObject(req.files.image)) {
+    if (
+      req.files.image.mimetype !== "image/jpeg" &&
+      req.files.image.mimetype !== "image/jpg" &&
+      req.files.image.mimetype === "image/png"
+    ) {
+      res.status(400);
+      res.send({
+        Status: 400,
+        Message: "Only the file formats JPG, JPEG and PNG are allowed.",
+      });
+      return;
+    } else {
+      let data = await uploadImage(req.files.image);
+      const user = await User.findOne({ email: email });
+      const image = new Image({
+        user_id: user._id,
+        file_name: req.files.image.name,
+        s3_bucket_path: data.key,
+      });
+      await image
+        .save()
+        .then(() => {
+          res.status(201);
+          res.send({
+            Status: 201,
+            Message: "Uploaded the profile pic successfully.",
+          });
+        })
+        .catch((err) => {
+          reject(console.error("Failed to create a new Image : ", err));
+        });
+    }
+  } else {
+    res.status(400);
+    res.send({ Status: 400, Message: "Only one image can be uploaded." });
+    return;
+  }
+};
+
+function deleteImage(key) {
+  return new Promise(async (resolve, reject) => {
+    AWS.config.update({
+      region: process.env.AWS_DEFAULT_REGION,
+    });
+    var s3 = new AWS.S3();
+    var params = { Bucket: process.env.S3_BUCKET, Key: key };
+
+    s3.deleteObject(params, function (err, data) {
+      if (err) {
+        reject(err);
+      } else resolve();
+    });
+  });
+}
+
+const deleteProfileImage = async (req, res) => {
+  const email = req.body.email;
+  const user = await User.findOne({ email: email });
+  const image = await Image.findOne({ _id: user._id });
+  await deleteImage(image.s3_bucket_path);
+  res.sendStatus(204);
+};
+
+/* Ticket Components Start */
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2022-08-01",
+});
+
+const paymentConfig = (req, res) => {
+  res.send({
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+  });
+};
+
+const createPaymentIntent = async (req, res) => {
+  try {
     const paymentIntent = await stripe.paymentIntents.create({
       currency: "USD",
-      amount: req.body.amount*100,
+      amount: req.body.amount * 100,
       automatic_payment_methods: { enabled: true },
     });
 
@@ -327,136 +321,145 @@ const createPaymentIntent = async (req, res) =>
       },
     });
   }
-}
+};
 
-const saveTickets = async (req, res) => 
-{
-    const ticketData = req.body;
-    const newTicket = new Ticket(ticketData);
+const saveTickets = async (req, res) => {
+  const ticketData = req.body;
+  const newTicket = new Ticket(ticketData);
 
-    try {
-        await newTicket.save();
-        res.status(201).json(newTicket);
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating ticket', error });
-    }
-}
+  try {
+    await newTicket.save();
+    res.status(201).json(newTicket);
+  } catch (error) {
+    res.status(500).json({ message: "Error creating ticket", error });
+  }
+};
 
-const getTickets = async (req, res) => 
-{
-    try{
-        const tickets = await Ticket.find();
-        res.status(200).json(tickets);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching tickets', error });
-    }
-}
+const getTickets = async (req, res) => {
+  try {
+    const tickets = await Ticket.find();
+    res.status(200).json(tickets);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching tickets", error });
+  }
+};
 /* Ticket Components End */
 
 const getUpcomingEvents = async (req, res) => {
-    try {
-        const currentDate = new Date();
-        const nextFiveDaysDate = new Date(currentDate.getTime() + 5 * 24 * 60 * 60 * 1000);
+  try {
+    const currentDate = new Date();
+    const nextFiveDaysDate = new Date(
+      currentDate.getTime() + 5 * 24 * 60 * 60 * 1000
+    );
 
-        const upcomingEvents = await Events.find({ event_date: { $gte: currentDate, $lte: nextFiveDaysDate } });
-        if (upcomingEvents.length === 0) {
-            return res.status(204).json ({message : 'No Upcoming events in the next 5 days'});
-        } else {
-            return res.status(200).json(upcomingEvents);
-        }
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Error fetching upcoming event details', error });
+    const upcomingEvents = await Events.find({
+      event_date: { $gte: currentDate, $lte: nextFiveDaysDate },
+    });
+    if (upcomingEvents.length === 0) {
+      return res
+        .status(204)
+        .json({ message: "No Upcoming events in the next 5 days" });
+    } else {
+      return res.status(200).json(upcomingEvents);
     }
-}
-
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Error fetching upcoming event details", error });
+  }
+};
 
 /* Upcoming Event section ends */
 
-const getEventDetailsByEventId = async(req,res) => {
-
-    try {
-        const eventId =req.params.eventId;
-        if (!eventId) {
-            return res.status(400).send("Event ID cannot be null");
-        }
-        if (typeof eventId !== "string") {
-            return res.status(400).send("Event ID must be a string");
-          }
-        const eventDetails = await Events.findOne({ event_id: eventId });
-
-        if (!eventDetails) {
-            return res.status(404).send("Event not found");
-          }
-        res.status(200).json(eventDetails);
-
-    } catch (error){
-        console.error(error);
-       res.status(500).json({error : 'Error fetching event details for the given eventID',error});
-
+const getEventDetailsByEventId = async (req, res) => {
+  try {
+    const eventId = req.params.eventId;
+    if (!eventId) {
+      return res.status(400).send("Event ID cannot be null");
     }
-}
+    if (typeof eventId !== "string") {
+      return res.status(400).send("Event ID must be a string");
+    }
+    const eventDetails = await Events.findOne({ event_id: eventId });
+
+    if (!eventDetails) {
+      return res.status(404).send("Event not found");
+    }
+    res.status(200).json(eventDetails);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Error fetching event details for the given eventID",
+      error,
+    });
+  }
+};
 
 /* end of get eventDetails from eventId */
 
-const sendEmailToUser = async(req,res) => {
+const sendEmailToUser = async (req, res) => {
+  const ticketID = req.body.ticketID;
 
-    const ticketID =req.body.ticketID;
+  try {
+    const ticket = await Ticket.findOne({ ticketID: ticketID });
+    if (!ticket) {
+      return res.status(404).send("ticket not found with the given ticket id");
+    }
+    const event = await Events.findOne({ event_id: ticket.eventID });
+    if (!event) {
+      return res.status(404).send("Event not Found with the given ticket id");
+    }
+    const user = await User.findOne({ user_id: ticket.userID });
+    if (!user) {
+      return res.status(404).send("user not found");
+    }
 
-    try{
-        const ticket =await Ticket.findOne({ticketID: ticketID});
-        if(!ticket){
-            return res.status(404).send("ticket not found with the given ticket id");
-        }
-        const event =await Events.findOne({event_id : ticket.eventID});
-        if(!event){
-            return res.status(404).send("Event not Found with the given ticket id");
-        }
-        const user= await User.findOne({user_id : ticket.userID});
-        if(!user){
-            return res.status(404).send("user not found");
-        }
+    const email = user.email;
 
-        const email =user.email;
+    if (!email) {
+      return res.status(404).send("email address not found in User database");
+    }
 
-        if(!email){
-            return res.status(404).send("email address not found in User database");
-        }
-
-        const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
-        auth: {
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
         user: "dineshitendulkar@gmail.com",
         pass: "uuqqtmmuiqohdeyq",
       },
     });
 
     const mailOptions = {
-    from: "dineshitendulkar@gmail.com",
-    to: email,
-    subject: "Ticket Details",
-    html: `<p>Hi ${user.name},</p><p>Your ticket for the event ${event.title} is confirmed.</p><p>Details:</p><p>Ticket ID: ${ticket.ticketID}</p><p>Event Title: ${event.title}</p><p>Event Date: ${event.event_date.toDateString()}</p><p>Location: ${event.location}</p><p>Payment Type: ${ticket.paymentType}</p>`,
-      };
+      from: "dineshitendulkar@gmail.com",
+      to: email,
+      subject: "Ticket Details",
+      html: `<p>Hi ${user.name},</p><p>Your ticket for the event ${
+        event.title
+      } is confirmed.</p><p>Details:</p><p>Ticket ID: ${
+        ticket.ticketID
+      }</p><p>Event Title: ${
+        event.title
+      }</p><p>Event Date: ${event.event_date.toDateString()}</p><p>Location: ${
+        event.location
+      }</p><p>Payment Type: ${ticket.paymentType}</p>`,
+    };
 
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error(error);
-          return res.status(500).json({ message: "Error sending email", error });
-        }
-        console.log("Email sent:", info.response);
-        res.status(200).json({ message: "Email sent" });
-      });
-    } catch (error) {
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
         console.error(error);
-        res.status(500).json({ message: "Error fetching ticket details", error });
+        return res.status(500).json({ message: "Error sending email", error });
       }
-}
+      console.log("Email sent:", info.response);
+      res.status(200).json({ message: "Email sent" });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching ticket details", error });
+  }
+};
 /*end of send tickets to user*/
-
-
-
 
 module.exports = {
   getUserByEmail,
