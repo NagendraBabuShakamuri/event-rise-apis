@@ -23,7 +23,7 @@ const {
 
 } = require("../controllers/controller");
 
-const { createEvent, getEvents, updateEvent } = require("../controllers/eventsController.js");
+const { createEvent, getEvents, updateEvent, deleteEvent } = require("../controllers/eventsController.js");
 
 router.get("/health", (req, res) => {
   res.send("Hello world");
@@ -100,6 +100,8 @@ router.post("/createEvent", createEvent);
 router.get("/getEvents", getEvents);
 
 router.put("/updateEvent", updateEvent);
+
+router.delete("/deleteEvent", deleteEvent);
 
 router.delete("/deleteProfileImage", deleteProfileImage);
 
