@@ -9,7 +9,7 @@ const Ticket = require("../models/TicketSchema");
 const { events } = require("../models/TicketSchema");
 const nodemailer = require("nodemailer");
 const Events = require("../models/Events");
-require("dotenv").config({ path: "./.env" });
+require("dotenv").config();
 
 function isPasswordSame(user_pass, password) {
   return new Promise((resolve, reject) => {
