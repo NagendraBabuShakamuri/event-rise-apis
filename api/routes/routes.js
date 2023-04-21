@@ -72,7 +72,7 @@ router.get('/api/attendedEvents/:userId',getAttendedEvents );
 
 router.get('/api/upcomingEventsByUserId/:userId',getUpcomingEventsByUserId );
 
-router.post('/api/sendEventStatus/:eventId',sendEmailToEventCreator);
+router.post('/api/sendEventStatus',sendEmailToEventCreator);
 
 router.get('/api/hostedEvents/:userId', getHostedEvents);
 

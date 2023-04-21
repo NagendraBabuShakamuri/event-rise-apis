@@ -257,7 +257,6 @@ function uploadImage(image) {
     };
     s3.upload(params, (err, data) => {
       if (err) {
-        logger.error(`${err}`);
         reject(err);
       } else {
         resolve(data);
@@ -613,7 +612,7 @@ const getUpcomingEventsByUserId = async (req, res) => {
 const sendEmailToEventCreator = async(req,res) => {
     
     try {
-        const eventId= req.params.eventId;
+        const eventId= req.body.event_id;
         console.log(eventId);
         const events = await Events.findOne({ event_id: eventId });
         console.log(events);
@@ -806,5 +805,7 @@ module.exports = {
   pendingEvents,
   getProfileImage,
   mostEventCategoryAttendedByUser,
-  mostEventsHostedByUser
+  mostEventsHostedByUser,
+  uploadImage,
+  deleteImage
 };
