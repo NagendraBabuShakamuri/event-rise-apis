@@ -651,7 +651,7 @@ const sendEmailToEventCreator = async(req,res) => {
             });
     } catch (err){
         //console.error(error);
-        res.status(500).json({ message: "Error fetching ticket details", err });
+        res.status(500).json({ message: "Error fetching  details", err });
     }
 }
 
@@ -708,6 +708,40 @@ const pendingEvents = async(req,res) => {
     }
 }
 
+const mostEventCategoryAttendedByUser =async(req,res) => {
+    try{
+        const userId =req.params.userId;
+        const events =await Ticket.aggregate([
+            { $match: { user_id: userId } },
+            { $group: { _id: '$event_id', count: { $sum: 1 } } },
+          ]);
+          console.log(events);
+          const eventIds = events.map((event) => event._id);
+          console.log(eventIds);
+          const populatedEvents = await Events.find({ event_id: { $in: eventIds } }).select('event_id event_category title ');
+          console.log(populatedEvents);
+
+          const result = events.map((event) => {
+          const populatedEvent = populatedEvents.find((e) => e.event_id === event._id);
+          console.log(populatedEvent);
+
+           return {
+              //event_id: event._id,
+              title : populatedEvent ? populatedEvent.title : null,
+              event_category: populatedEvent ? populatedEvent.event_category : null,
+              count: event.count,
+      };
+    });
+    res.status(200).json(result);
+
+    }catch(err){
+        res.status(500).json({ message: 'Error fetching Details of the most event category attended by user ',err });
+    }
+}
+
+
+
+
 
 
 
@@ -732,5 +766,6 @@ module.exports = {
   sendEmailToEventCreator,
   getHostedEvents,
   pendingEvents,
-  getProfileImage
+  getProfileImage,
+  mostEventCategoryAttendedByUser
 };
