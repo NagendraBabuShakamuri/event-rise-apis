@@ -320,9 +320,14 @@ function deleteImage(key) {
     var params = { Bucket: process.env.S3_BUCKET, Key: key };
 
     s3.deleteObject(params, function (err, data) {
-      if (err) {
+      if (err) 
+      {
         reject(err);
-      } else resolve();
+      } 
+      else
+      { 
+        resolve(data);
+      }
     });
   });
 }
@@ -334,7 +339,9 @@ const deleteProfileImage = async (req, res) => {
   console.log(user);
   const image = await Image.findOne({ user_id: user._id });
   console.log(image);
-  await deleteImage(image.s3_bucket_path);
+  console.log(image.s3_bucket_path);
+  const resp = await deleteImage(image.s3_bucket_path);
+  console.log(resp);
   res.sendStatus(204);
 };
 
