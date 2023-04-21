@@ -21,8 +21,8 @@ const {
     getUpcomingEventsByUserId,
     sendEmailToEventCreator,
     getHostedEvents,
-    pendingEvents
-
+    pendingEvents,
+    getProfileImage
 } = require("../controllers/controller");
 
 const { createEvent, getEvents, updateEvent, deleteEvent } = require("../controllers/eventsController.js");
@@ -110,5 +110,7 @@ router.put("/updateEvent", updateEvent);
 router.delete("/deleteEvent", deleteEvent);
 
 router.delete("/deleteProfileImage", deleteProfileImage);
+
+router.get("/getProfileImage", getProfileImage);
 
 module.exports = router;
