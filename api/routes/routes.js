@@ -79,12 +79,18 @@ router.get('/api/pendingEvents/:userId', pendingEvents);
 router.get(
   "/auth/google/events",
   passport.authenticate("google", {
-    failureRedirect: "/health?error=authentication_failed",
+    failureRedirect: "/events",
   }),
   function (req, res) {
     // Successful authentication, redirect to the page.
     console.log(req.isAuthenticated());
-    res.redirect("/events");
+    if (req.isAuthenticated()) {
+        res.status(200);
+        res.send({ "Status": 200, "Message": "Authenticated" });
+      } else {
+        res.status(401);
+        res.send({ "Status": 401, "Message": "UnAuthenticated" });
+    }
   }
 );
 
