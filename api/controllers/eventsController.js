@@ -1,11 +1,9 @@
-const { randomUUID } = require('crypto');
 const Event = require('../models/Events');
 
 const createEvent = async (req, res) => {
     process.stdout.write('Create event API gets called')
     console.log(req.body)
     req.body['status'] = "pending"
-    req.body['event_id'] = randomUUID()
     req.body['event_date_timezone'] = "UTC"
 
     try{

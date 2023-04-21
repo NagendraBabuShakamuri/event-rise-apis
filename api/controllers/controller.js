@@ -613,7 +613,7 @@ const getUpcomingEventsByUserId = async (req, res) => {
 const sendEmailToEventCreator = async(req,res) => {
     
     try {
-        const eventId= req.params.eventId;
+        const eventId= req.body.event_id;
         console.log(eventId);
         const events = await Events.findOne({ event_id: eventId });
         console.log(events);
