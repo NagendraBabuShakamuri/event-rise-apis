@@ -471,7 +471,7 @@ const getDetailsByEventCategory =async(req, res) => {
         const category =req.params.category;
         const events = await Events.find(
             { event_category: category , status: 'approved' },
-            { event_id : 1,title: 1, description: 1, location: 1, event_date: 1, status: 1, image_path: 1,  _id: 0 }
+            { event_id : 1,title: 1, description: 1, location: 1, event_date: 1, ticket_price: 1, status: 1, image_path: 1,  _id: 0 }
           );
         console.log(events);
         if(events.length  === 0){
@@ -499,6 +499,7 @@ const getAttendedEvents = async(req,res) => {
           title: event.title,
           description: event.description,
           location: event.location,
+          ticket_price: event.ticket_price,
           event_date: event.event_date,
           image_path: event.image_path,
           status: event.status,
@@ -540,6 +541,7 @@ const getUpcomingEventsByUserId = async (req, res) => {
       description: event.description,
       location: event.location,
       event_date: event.event_date,
+      ticket_price : event.ticket_price,
       image_path: event.image_path,
       status: event.status,
     }));
@@ -612,6 +614,7 @@ const getHostedEvents = async(req,res) => {
             title: event.title,
             description: event.description,
             location: event.location,
+            ticket_price : event.ticket_price,
             event_date: event.event_date,
             image_path: event.image_path,
             status: event.status,
@@ -621,6 +624,32 @@ const getHostedEvents = async(req,res) => {
 
     } catch(err){
         res.status(500).json({message : "error fetching hosted event details",err});
+    }
+}
+
+const pendingEvents = async(req,res) => {
+
+    try{
+        userId= req.params.userId;
+        const events= await Events.find({hosted_by : { $in: userId }, status: "pending"});
+        console.log(events);
+        if(!events){
+            res.status(404).json({message : "no pending events"});
+        }
+        const eventList = events.map((event) => ({
+            event_id: event.event_id,
+            title: event.title,
+            description: event.description,
+            location: event.location,
+            ticket_price : event.ticket_price,
+            event_date: event.event_date,
+            image_path: event.image_path,
+            status: event.status,
+          }));
+        console.log(eventList);
+        res.status(200).json({eventList});
+    } catch(err){
+        res.status(500).json({message : "error fetching pending event details",err});
     }
 }
 
@@ -646,5 +675,6 @@ module.exports = {
   getAttendedEvents,
   getUpcomingEventsByUserId,
   sendEmailToEventCreator,
-  getHostedEvents
+  getHostedEvents,
+  pendingEvents
 };

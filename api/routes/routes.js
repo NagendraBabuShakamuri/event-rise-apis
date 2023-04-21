@@ -20,7 +20,8 @@ const {
     getAttendedEvents,
     getUpcomingEventsByUserId,
     sendEmailToEventCreator,
-    getHostedEvents
+    getHostedEvents,
+    pendingEvents
 
 } = require("../controllers/controller");
 
@@ -72,6 +73,8 @@ router.get('/api/upcomingEventsByUserId/:userId',getUpcomingEventsByUserId );
 router.post('/api/sendEventStatus/:eventId',sendEmailToEventCreator);
 
 router.get('/api/hostedEvents/:userId', getHostedEvents);
+
+router.get('/api/pendingEvents/:userId', pendingEvents);
 
 router.get(
   "/auth/google/events",
