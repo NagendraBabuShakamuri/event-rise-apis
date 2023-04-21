@@ -739,6 +739,44 @@ const mostEventCategoryAttendedByUser =async(req,res) => {
     }
 }
 
+const mostEventsHostedByUser =async(req,res) => {
+
+    const userId  = req.params.userId;
+    console.log(userId);
+
+    try {
+      const events = await Events.aggregate([
+        {
+          $match: {
+            hosted_by: userId,
+            status: "approved",
+          },
+        },
+        {
+          $group: {
+            _id: {
+              event_category: "$event_category",
+              title: "$title",
+            },
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            title: "$_id.title",
+            event_category: "$_id.event_category",
+            count: 1,
+          },
+        },
+      ]);
+      console.log(events);
+      res.status(200).json(events);
+    } catch(err){
+        res.status(500).json({message : "error in finding Hosted events count", err});
+    }
+}
+
 
 
 
@@ -767,5 +805,6 @@ module.exports = {
   getHostedEvents,
   pendingEvents,
   getProfileImage,
-  mostEventCategoryAttendedByUser
+  mostEventCategoryAttendedByUser,
+  mostEventsHostedByUser
 };
