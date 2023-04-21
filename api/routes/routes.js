@@ -117,6 +117,6 @@ router.delete("/deleteEvent", deleteEvent);
 
 router.delete("/deleteProfileImage", deleteProfileImage);
 
-router.get("/getProfileImage", getProfileImage);
+router.post("/getProfileImage", getProfileImage);
 
 module.exports = router;
