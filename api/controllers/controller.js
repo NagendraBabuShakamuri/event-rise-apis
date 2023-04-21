@@ -203,15 +203,42 @@ const canRenderEvent = (req, res) => {
     }
 };
 
+function getImageFromS3(key) {
+    return new Promise(async (resolve, reject) => {
+        const bucketName = process.env.S3_BUCKET;
+        const objectKey = key;
+        
+        const params = {
+        Bucket: bucketName,
+        Key: objectKey
+        };
+        
+        s3.getObject(params, (err, data) => {
+            if(err)
+            {
+                reject(err);
+            }
+            else 
+            {                
+                resolve(data);
+            }            
+        });
+    });    
+}
+
 const getProfileImage = async (req, res) => {
     const email = req.body.email;
     console.log(email);
     const user = await User.findOne({ email: email });
     console.log(user);
-    const image = await Image.findOne({ _id: user._id });
+    const image = await Image.findOne({ user_id: user._id });
     console.log(image);
     console.log(image.s3_bucket_path);
-    res.status(400);
+    const imageBody = await getImageFromS3(image.s3_bucket_path);
+    const imageData = Buffer.from(imageBody.Body).toString('base64');
+    const imageSrc = `data:${imageBody.ContentType};base64,${imageData}`;
+    res.status(200);
+    res.send(imageSrc);
 };
 
 function uploadImage(image) {
@@ -305,7 +332,7 @@ const deleteProfileImage = async (req, res) => {
   console.log(email);
   const user = await User.findOne({ email: email });
   console.log(user);
-  const image = await Image.findOne({ _id: user._id });
+  const image = await Image.findOne({ user_id: user._id });
   console.log(image);
   await deleteImage(image.s3_bucket_path);
   res.sendStatus(204);
