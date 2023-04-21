@@ -202,6 +202,17 @@ const canRenderEvent = (req, res) => {
   }
 };
 
+const getProfileImage = async (req, res) => {
+    const email = req.body.email;
+    console.log(email);
+    const user = await User.findOne({ email: email });
+    console.log(user);
+    const image = await Image.findOne({ _id: user._id });
+    console.log(image);
+    console.log(image.s3_bucket_path);
+    res.status(400);
+};
+
 function uploadImage(image) {
   return new Promise(async (resolve, reject) => {
     AWS.config.update({
@@ -227,6 +238,7 @@ function uploadImage(image) {
 
 const uploadProfileImage = async (req, res) => {
   const email = req.body.email;
+  console.log(email);
   let isObject = function (a) {
     return !!a && a.constructor === Object;
   };
@@ -249,10 +261,11 @@ const uploadProfileImage = async (req, res) => {
         user_id: user._id,
         file_name: req.files.image.name,
         s3_bucket_path: data.key,
-      });
+      });      
       await image
         .save()
-        .then(() => {
+        .then((resp) => {
+          console.log(resp);
           res.status(201);
           res.send({
             Status: 201,
@@ -288,8 +301,11 @@ function deleteImage(key) {
 
 const deleteProfileImage = async (req, res) => {
   const email = req.body.email;
+  console.log(email);
   const user = await User.findOne({ email: email });
+  console.log(user);
   const image = await Image.findOne({ _id: user._id });
+  console.log(image);
   await deleteImage(image.s3_bucket_path);
   res.sendStatus(204);
 };
@@ -676,5 +692,6 @@ module.exports = {
   getUpcomingEventsByUserId,
   sendEmailToEventCreator,
   getHostedEvents,
-  pendingEvents
+  pendingEvents,
+  getProfileImage
 };
