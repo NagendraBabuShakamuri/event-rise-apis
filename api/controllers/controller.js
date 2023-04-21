@@ -208,9 +208,11 @@ function getImageFromS3(key) {
         const bucketName = process.env.S3_BUCKET;
         const objectKey = key;
         
+        const s3 = new AWS.S3();
+
         const params = {
-        Bucket: bucketName,
-        Key: objectKey
+            Bucket: bucketName,
+            Key: objectKey
         };
         
         s3.getObject(params, (err, data) => {
@@ -333,16 +335,18 @@ function deleteImage(key) {
 }
 
 const deleteProfileImage = async (req, res) => {
-  const email = req.body.email;
-  console.log(email);
-  const user = await User.findOne({ email: email });
-  console.log(user);
-  const image = await Image.findOne({ user_id: user._id });
-  console.log(image);
-  console.log(image.s3_bucket_path);
-  const resp = await deleteImage(image.s3_bucket_path);
-  console.log(resp);
-  res.sendStatus(204);
+    const email = req.body.email;
+    console.log(email);
+    const user = await User.findOne({ email: email });
+    console.log(user);
+    const image = await Image.findOne({ user_id: user._id });
+    console.log(image);
+    console.log(image.s3_bucket_path);
+    const delImage =  await Image.deleteOne({ user_id: user._id });
+    console.log(delImage);
+    const resp = await deleteImage(image.s3_bucket_path);
+    console.log(resp);
+    res.sendStatus(204);
 };
 
 /* Ticket Components Start */
