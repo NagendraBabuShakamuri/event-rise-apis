@@ -22,6 +22,7 @@ const {
     sendEmailToEventCreator,
     getHostedEvents,
     pendingEvents,
+    mostEventCategoryAttendedByUser,
     getProfileImage
 } = require("../controllers/controller");
 
@@ -75,6 +76,8 @@ router.post('/api/sendEventStatus/:eventId',sendEmailToEventCreator);
 router.get('/api/hostedEvents/:userId', getHostedEvents);
 
 router.get('/api/pendingEvents/:userId', pendingEvents);
+
+router.get('/api/analytics/:userId',mostEventCategoryAttendedByUser);
 
 router.get(
   "/auth/google/events",
