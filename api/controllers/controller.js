@@ -8,10 +8,11 @@ const uuid = require("uuid");
 const Ticket = require("../models/TicketSchema");
 const { events } = require("../models/TicketSchema");
 const nodemailer = require("nodemailer");
-const Events = require('../models/Events');
-const mongoose = require('mongoose');
-const qr = require('qr-image');
+const Events = require("../models/Events");
+const mongoose = require("mongoose");
+const qr = require("qr-image");
 require("dotenv").config({ path: "./.env" });
+const jwt = require("jsonwebtoken");
 
 function isPasswordSame(user_pass, password) {
   return new Promise((resolve, reject) => {
@@ -58,6 +59,11 @@ const userExists = async (req, res) => {
       let same = await isPasswordSame(password, foundUser.password);
 
       if (same) {
+        const token = jwt.sign(
+          { userId: foundUser._id, email: foundUser.email },
+          process.env.JWT_SECRET,
+          { expiresIn: "1h" }
+        );
         res.status(200);
         res.send({
           Status: 200,
@@ -65,6 +71,7 @@ const userExists = async (req, res) => {
           name: foundUser.name,
           email: foundUser.email,
           userId: foundUser._id,
+          token: token,
         });
       } else {
         res.status(401);
@@ -194,53 +201,50 @@ const updateUser = async (req, res) => {
 };
 
 const canRenderEvent = (req, res) => {
-    if (req.isAuthenticated()) {
-        res.status(200);
-        res.send({ "Status": 200, "Message": "Authenticated" });
-      } else {
-        res.status(401);
-        res.send({ "Status": 401, "Message": "UnAuthenticated" });
-    }
+  if (req.isAuthenticated()) {
+    res.status(200);
+    res.send({ Status: 200, Message: "Authenticated" });
+  } else {
+    res.status(401);
+    res.send({ Status: 401, Message: "UnAuthenticated" });
+  }
 };
 
 function getImageFromS3(key) {
-    return new Promise(async (resolve, reject) => {
-        const bucketName = process.env.S3_BUCKET;
-        const objectKey = key;
-        
-        const s3 = new AWS.S3();
+  return new Promise(async (resolve, reject) => {
+    const bucketName = process.env.S3_BUCKET;
+    const objectKey = key;
 
-        const params = {
-            Bucket: bucketName,
-            Key: objectKey
-        };
-        
-        s3.getObject(params, (err, data) => {
-            if(err)
-            {
-                reject(err);
-            }
-            else 
-            {                
-                resolve(data);
-            }            
-        });
-    });    
+    const s3 = new AWS.S3();
+
+    const params = {
+      Bucket: bucketName,
+      Key: objectKey,
+    };
+
+    s3.getObject(params, (err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
 }
 
 const getProfileImage = async (req, res) => {
-    const email = req.body.email;
-    console.log(email);
-    const user = await User.findOne({ email: email });
-    console.log(user);
-    const image = await Image.findOne({ user_id: user._id });
-    console.log(image);
-    console.log(image.s3_bucket_path);
-    const imageBody = await getImageFromS3(image.s3_bucket_path);
-    const imageData = Buffer.from(imageBody.Body).toString('base64');
-    const imageSrc = `data:${imageBody.ContentType};base64,${imageData}`;
-    res.status(200);
-    res.send(imageSrc);
+  const email = req.body.email;
+  console.log(email);
+  const user = await User.findOne({ email: email });
+  console.log(user);
+  const image = await Image.findOne({ user_id: user._id });
+  console.log(image);
+  console.log(image.s3_bucket_path);
+  const imageBody = await getImageFromS3(image.s3_bucket_path);
+  const imageData = Buffer.from(imageBody.Body).toString("base64");
+  const imageSrc = `data:${imageBody.ContentType};base64,${imageData}`;
+  res.status(200);
+  res.send(imageSrc);
 };
 
 function uploadImage(image) {
@@ -290,7 +294,7 @@ const uploadProfileImage = async (req, res) => {
         user_id: user._id,
         file_name: req.files.image.name,
         s3_bucket_path: data.key,
-      });      
+      });
       await image
         .save()
         .then((resp) => {
@@ -321,12 +325,9 @@ function deleteImage(key) {
     var params = { Bucket: process.env.S3_BUCKET, Key: key };
 
     s3.deleteObject(params, function (err, data) {
-      if (err) 
-      {
+      if (err) {
         reject(err);
-      } 
-      else
-      { 
+      } else {
         resolve(data);
       }
     });
@@ -334,18 +335,18 @@ function deleteImage(key) {
 }
 
 const deleteProfileImage = async (req, res) => {
-    const email = req.body.email;
-    console.log(email);
-    const user = await User.findOne({ email: email });
-    console.log(user);
-    const image = await Image.findOne({ user_id: user._id });
-    console.log(image);
-    console.log(image.s3_bucket_path);
-    const delImage =  await Image.deleteOne({ user_id: user._id });
-    console.log(delImage);
-    const resp = await deleteImage(image.s3_bucket_path);
-    console.log(resp);
-    res.sendStatus(204);
+  const email = req.body.email;
+  console.log(email);
+  const user = await User.findOne({ email: email });
+  console.log(user);
+  const image = await Image.findOne({ user_id: user._id });
+  console.log(image);
+  console.log(image.s3_bucket_path);
+  const delImage = await Image.deleteOne({ user_id: user._id });
+  console.log(delImage);
+  const resp = await deleteImage(image.s3_bucket_path);
+  console.log(resp);
+  res.sendStatus(204);
 };
 
 /* Ticket Components Start */
@@ -428,11 +429,10 @@ const getUpcomingEvents = async (req, res) => {
 
 /* Upcoming Event section ends */
 
-const getEventDetailsByEventId = async(req,res) => {
-
-    try {
-        const eventId =req.params.eventId;
-        const eventDetails = await Events.findOne({ event_id: eventId });
+const getEventDetailsByEventId = async (req, res) => {
+  try {
+    const eventId = req.params.eventId;
+    const eventDetails = await Events.findOne({ event_id: eventId });
 
     if (!eventDetails) {
       return res.status(404).send("Event not found");
@@ -449,28 +449,27 @@ const getEventDetailsByEventId = async(req,res) => {
 
 /* end of get eventDetails from eventId */
 
-const sendEmailToUser = async(req,res) => {
+const sendEmailToUser = async (req, res) => {
+  //as of now ticketID params  defined below we are passing user_id value present in Ticket database
 
-    //as of now ticketID params  defined below we are passing user_id value present in Ticket database
+  const ticketID = req.body.ticketID;
+  console.log(ticketID);
 
-    const ticketID =req.body.ticketID;
-    console.log(ticketID);
-
-    try{
-        const ticket = await Ticket.findOne({_id : ticketID });
-        console.log(ticket);
-        if(!ticket){
-            return res.status(404).send("ticket not found with the given ticket id");
-        }
-        const event =await Events.findOne({event_id : ticket.event_id});
-        console.log(event);
-        if(!event){
-            return res.status(404).send("Event not Found with the given ticket id");
-        }
-        const user= await User.findOne({_id : ticket.user_id});
-        if(!user){
-            return res.status(404).send("user not found");
-        }
+  try {
+    const ticket = await Ticket.findOne({ _id: ticketID });
+    console.log(ticket);
+    if (!ticket) {
+      return res.status(404).send("ticket not found with the given ticket id");
+    }
+    const event = await Events.findOne({ event_id: ticket.event_id });
+    console.log(event);
+    if (!event) {
+      return res.status(404).send("Event not Found with the given ticket id");
+    }
+    const user = await User.findOne({ _id: ticket.user_id });
+    if (!user) {
+      return res.status(404).send("user not found");
+    }
 
     const email = user.email;
 
@@ -488,22 +487,34 @@ const sendEmailToUser = async(req,res) => {
       },
     });
 
-    const qrCode = qr.imageSync(`Ticket ID: ${ticket.ticketID}`, { type: 'png' });
+    const qrCode = qr.imageSync(`Ticket ID: ${ticket.ticketID}`, {
+      type: "png",
+    });
     const attachments = [
       {
-        filename: 'qr_code.png',
+        filename: "qr_code.png",
         content: qrCode,
-        cid: 'qr_code_cid'
-      }
+        cid: "qr_code_cid",
+      },
     ];
 
     const mailOptions = {
-    from: "dineshitendulkar@gmail.com",
-    to: email,
-    subject: "Ticket Details",
-    html: `<p>Hi ${user.name},</p><p>Your ticket for the event ${event.title} is confirmed.</p><p>Details:</p><p>Ticket ID: ${ticket._id}</p><p>Event Title: ${event.title}</p><p>Event Date: ${event.event_date.toDateString()}</p><p>Location: ${event.location}</p><p>Payment Type: ${ticket.paymentType}</p><img src="cid:qr_code_cid" alt="QR Code"/>`,
+      from: "dineshitendulkar@gmail.com",
+      to: email,
+      subject: "Ticket Details",
+      html: `<p>Hi ${user.name},</p><p>Your ticket for the event ${
+        event.title
+      } is confirmed.</p><p>Details:</p><p>Ticket ID: ${
+        ticket._id
+      }</p><p>Event Title: ${
+        event.title
+      }</p><p>Event Date: ${event.event_date.toDateString()}</p><p>Location: ${
+        event.location
+      }</p><p>Payment Type: ${
+        ticket.paymentType
+      }</p><img src="cid:qr_code_cid" alt="QR Code"/>`,
       attachments: attachments,
-      };
+    };
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
@@ -520,51 +531,69 @@ const sendEmailToUser = async(req,res) => {
 };
 /*end of send tickets to user*/
 
-const getDetailsByEventCategory =async(req, res) => {
-    try{
-        const category =req.params.category;
-        const events = await Events.find(
-            { event_category: category , status: 'approved' },
-            { event_id : 1,title: 1, description: 1, location: 1, event_date: 1, ticket_price: 1, status: 1, image_path: 1,  _id: 0 }
-          );
-        console.log(events);
-        if(events.length  === 0){
-            return res.status(404).send("Event not found with given event_category or with approved status");
-        }
-        res.status(200).json(events);
-    } catch(error){
-        console.error(error);
-    res.status(500).json({ message: 'Error fetching events', error });
+const getDetailsByEventCategory = async (req, res) => {
+  try {
+    const category = req.params.category;
+    const events = await Events.find(
+      { event_category: category, status: "approved" },
+      {
+        event_id: 1,
+        title: 1,
+        description: 1,
+        location: 1,
+        event_date: 1,
+        ticket_price: 1,
+        status: 1,
+        image_path: 1,
+        _id: 0,
+      }
+    );
+    console.log(events);
+    if (events.length === 0) {
+      return res
+        .status(404)
+        .send(
+          "Event not found with given event_category or with approved status"
+        );
     }
-}
+    res.status(200).json(events);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error fetching events", error });
+  }
+};
 /* end of get event details by Event Category */
 
-const getAttendedEvents = async(req,res) => {
-    try{
-        const userId=req.params.userId;
-       const tickets = await Ticket.find({ user_id:  userId }).sort({ created_time: -1 }).limit(5);
-       const eventIds= tickets.map((ticket) => ticket.event_id);
-       const events= await Events.find({ event_id: { $in: eventIds } });
+const getAttendedEvents = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const tickets = await Ticket.find({ user_id: userId })
+      .sort({ created_time: -1 })
+      .limit(5);
+    const eventIds = tickets.map((ticket) => ticket.event_id);
+    const events = await Events.find({ event_id: { $in: eventIds } });
 
-       // Create an array of event objects with only the desired fields
+    // Create an array of event objects with only the desired fields
     const eventList = events.map((event) => {
-        return {
-          event_id: event.event_id,
-          title: event.title,
-          description: event.description,
-          location: event.location,
-          ticket_price: event.ticket_price,
-          event_date: event.event_date,
-          image_path: event.image_path,
-          status: event.status,
-        };
-      });
-      res.status(200).json(eventList);
-    }catch (err) {
-        console.error(err);
-        res.status(500).json({message : 'Error fetching attended event details', err});
-      }
-}
+      return {
+        event_id: event.event_id,
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        ticket_price: event.ticket_price,
+        event_date: event.event_date,
+        image_path: event.image_path,
+        status: event.status,
+      };
+    });
+    res.status(200).json(eventList);
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Error fetching attended event details", err });
+  }
+};
 
 /*end of get Attended events*/
 
@@ -573,14 +602,16 @@ const getUpcomingEventsByUserId = async (req, res) => {
     const userId = req.params.userId;
     console.log(userId);
 
-    const userTickets = await Ticket.find({user_id : userId});
+    const userTickets = await Ticket.find({ user_id: userId });
     console.log(userTickets);
 
     const eventIds = userTickets.map((ticket) => ticket.event_id);
     console.log(eventIds);
 
     const currentDate = new Date();
-    const nextFiveDaysDate = new Date(currentDate.getTime() + 5 * 24 * 60 * 60 * 1000);
+    const nextFiveDaysDate = new Date(
+      currentDate.getTime() + 5 * 24 * 60 * 60 * 1000
+    );
 
     const upcomingEvents = await Events.find({
       event_id: { $in: eventIds },
@@ -595,7 +626,7 @@ const getUpcomingEventsByUserId = async (req, res) => {
       description: event.description,
       location: event.location,
       event_date: event.event_date,
-      ticket_price : event.ticket_price,
+      ticket_price: event.ticket_price,
       image_path: event.image_path,
       status: event.status,
     }));
@@ -603,140 +634,160 @@ const getUpcomingEventsByUserId = async (req, res) => {
     res.status(200).json(eventList);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Error fetching upcoming event details', err });
+    res
+      .status(500)
+      .json({ message: "Error fetching upcoming event details", err });
   }
 };
 
 /* end of upcomingeventsbyuserid */
 
-const sendEmailToEventCreator = async(req,res) => {
-    
-    try {
-        const eventId= req.body.event_id;
-        console.log(eventId);
-        const events = await Events.findOne({ event_id: eventId });
-        console.log(events);
-        const user = await User.findOne({_id: events.hosted_by });
-        console.log(user);
-        const email = user.email;
+const sendEmailToEventCreator = async (req, res) => {
+  try {
+    const eventId = req.params.eventId;
+    console.log(eventId);
+    const events = await Events.findOne({ event_id: eventId });
+    console.log(events);
+    const user = await User.findOne({ _id: events.hosted_by });
+    console.log(user);
+    const email = user.email;
 
-        if (!email) {
-            return res.status(404).send("email address not found in User database");
-          }
-      
-          const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: false,
-            auth: {
-              user: "dineshitendulkar@gmail.com",
-              pass: "uuqqtmmuiqohdeyq",
-            },
-          });
-          const mailOptions = {
-            from: "dineshitendulkar@gmail.com",
-            to: email,
-            subject: "Event Details",
-            html: `<p>Hi ${user.name},</p><p>Your Event  ${events.title} is Approved.</p><p>Details:</p><p>Event ID: ${events.event_id}<p>Event Date: ${events.event_date.toDateString()}</p><p>Location: ${events.location}</p>`
-              };
-        
-            transporter.sendMail(mailOptions, (error, info) => {
-              if (error) {
-                //console.error(error);
-                return res.status(500).json({ message: "Error sending email", error });
-              }
-              console.log("Email sent:", info.response);
-              res.status(200).json({ message: "Email sent" });
-            });
-    } catch (err){
-        //console.error(error);
-        res.status(500).json({ message: "Error fetching  details", err });
+    if (!email) {
+      return res.status(404).send("email address not found in User database");
     }
-}
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: "dineshitendulkar@gmail.com",
+        pass: "uuqqtmmuiqohdeyq",
+      },
+    });
+    const mailOptions = {
+      from: "dineshitendulkar@gmail.com",
+      to: email,
+      subject: "Event Details",
+      html: `<p>Hi ${user.name},</p><p>Your Event  ${
+        events.title
+      } is Approved.</p><p>Details:</p><p>Event ID: ${
+        events.event_id
+      }<p>Event Date: ${events.event_date.toDateString()}</p><p>Location: ${
+        events.location
+      }</p>`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        //console.error(error);
+        return res.status(500).json({ message: "Error sending email", error });
+      }
+      console.log("Email sent:", info.response);
+      res.status(200).json({ message: "Email sent" });
+    });
+  } catch (err) {
+    //console.error(error);
+    res.status(500).json({ message: "Error fetching  details", err });
+  }
+};
 
 /*End of sendEmailToEventCreator API */
 
-const getHostedEvents = async(req,res) => {
+const getHostedEvents = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const events = await Events.find({ hosted_by: { $in: userId } }).sort({
+      event_date: 1,
+    });
+    console.log(events);
 
-    try{
-        const userId= req.params.userId;
-        const events = await Events.find({hosted_by : { $in: userId }}).sort({event_date : 1});
-        console.log(events);
+    const eventList = events.map((event) => ({
+      event_id: event.event_id,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      ticket_price: event.ticket_price,
+      event_date: event.event_date,
+      image_path: event.image_path,
+      status: event.status,
+    }));
+    console.log(eventList);
+    res.status(200).json({ eventList });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "error fetching hosted event details", err });
+  }
+};
 
-        const eventList = events.map((event) => ({
-            event_id: event.event_id,
-            title: event.title,
-            description: event.description,
-            location: event.location,
-            ticket_price : event.ticket_price,
-            event_date: event.event_date,
-            image_path: event.image_path,
-            status: event.status,
-          }));
-        console.log(eventList);
-        res.status(200).json({eventList});
-
-    } catch(err){
-        res.status(500).json({message : "error fetching hosted event details",err});
+const pendingEvents = async (req, res) => {
+  try {
+    userId = req.params.userId;
+    const events = await Events.find({
+      hosted_by: { $in: userId },
+      status: "pending",
+    });
+    console.log(events);
+    if (!events) {
+      res.status(404).json({ message: "no pending events" });
     }
-}
+    const eventList = events.map((event) => ({
+      event_id: event.event_id,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      ticket_price: event.ticket_price,
+      event_date: event.event_date,
+      image_path: event.image_path,
+      status: event.status,
+    }));
+    console.log(eventList);
+    res.status(200).json({ eventList });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "error fetching pending event details", err });
+  }
+};
 
-const pendingEvents = async(req,res) => {
+const mostEventCategoryAttendedByUser = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const events = await Ticket.aggregate([
+      { $match: { user_id: userId } },
+      { $group: { _id: "$event_id", count: { $sum: 1 } } },
+    ]);
+    console.log(events);
+    const eventIds = events.map((event) => event._id);
+    console.log(eventIds);
+    const populatedEvents = await Events.find({
+      event_id: { $in: eventIds },
+    }).select("event_id event_category title ");
+    console.log(populatedEvents);
 
-    try{
-        userId= req.params.userId;
-        const events= await Events.find({hosted_by : { $in: userId }, status: "pending"});
-        console.log(events);
-        if(!events){
-            res.status(404).json({message : "no pending events"});
-        }
-        const eventList = events.map((event) => ({
-            event_id: event.event_id,
-            title: event.title,
-            description: event.description,
-            location: event.location,
-            ticket_price : event.ticket_price,
-            event_date: event.event_date,
-            image_path: event.image_path,
-            status: event.status,
-          }));
-        console.log(eventList);
-        res.status(200).json({eventList});
-    } catch(err){
-        res.status(500).json({message : "error fetching pending event details",err});
-    }
-}
+    const result = events.map((event) => {
+      const populatedEvent = populatedEvents.find(
+        (e) => e.event_id === event._id
+      );
+      console.log(populatedEvent);
 
-const mostEventCategoryAttendedByUser =async(req,res) => {
-    try{
-        const userId =req.params.userId;
-        const events =await Ticket.aggregate([
-            { $match: { user_id: userId } },
-            { $group: { _id: '$event_id', count: { $sum: 1 } } },
-          ]);
-          console.log(events);
-          const eventIds = events.map((event) => event._id);
-          console.log(eventIds);
-          const populatedEvents = await Events.find({ event_id: { $in: eventIds } }).select('event_id event_category title ');
-          console.log(populatedEvents);
-
-          const result = events.map((event) => {
-          const populatedEvent = populatedEvents.find((e) => e.event_id === event._id);
-          console.log(populatedEvent);
-
-           return {
-              //event_id: event._id,
-              title : populatedEvent ? populatedEvent.title : null,
-              event_category: populatedEvent ? populatedEvent.event_category : null,
-              count: event.count,
+      return {
+        //event_id: event._id,
+        title: populatedEvent ? populatedEvent.title : null,
+        event_category: populatedEvent ? populatedEvent.event_category : null,
+        count: event.count,
       };
     });
     res.status(200).json(result);
-
-    }catch(err){
-        res.status(500).json({ message: 'Error fetching Details of the most event category attended by user ',err });
-    }
-}
+  } catch (err) {
+    res.status(500).json({
+      message:
+        "Error fetching Details of the most event category attended by user ",
+      err,
+    });
+  }
+};
 
 const mostEventsHostedByUser =async(req,res) => {
 

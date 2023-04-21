@@ -27,6 +27,7 @@ const {
     mostEventsHostedByUser
 } = require("../controllers/controller");
 
+const {getUserDetails} = require("../controllers/sessionManagement")
 const { createEvent, getEvents, updateEvent, deleteEvent } = require("../controllers/eventsController.js");
 
 router.get("/health", (req, res) => {
@@ -78,7 +79,9 @@ router.get('/api/hostedEvents/:userId', getHostedEvents);
 
 router.get('/api/pendingEvents/:userId', pendingEvents);
 
-router.get('/api/analytics/:userId',mostEventCategoryAttendedByUser);
+router.get('/api/analytics/:userId', mostEventCategoryAttendedByUser);
+
+router.get("/userDetails", getUserDetails); //for session management
 
 router.get('/api/analytics/hostedEvents/:userId',mostEventsHostedByUser);
 
