@@ -257,7 +257,6 @@ function uploadImage(image) {
     };
     s3.upload(params, (err, data) => {
       if (err) {
-        logger.error(`${err}`);
         reject(err);
       } else {
         resolve(data);
@@ -806,5 +805,7 @@ module.exports = {
   pendingEvents,
   getProfileImage,
   mostEventCategoryAttendedByUser,
-  mostEventsHostedByUser
+  mostEventsHostedByUser,
+  uploadImage,
+  deleteImage
 };

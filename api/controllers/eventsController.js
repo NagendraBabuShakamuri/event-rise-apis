@@ -1,10 +1,16 @@
 const Event = require('../models/Events');
+const { uploadImage, deleteImage } = require("./controller");
 
 const createEvent = async (req, res) => {
     process.stdout.write('Create event API gets called')
     console.log(req.body)
     req.body['status'] = "pending"
     req.body['event_date_timezone'] = "UTC"
+
+    const img_res = uploadImage(req.files.image)
+    
+    req.body['image_path'] = img_res.key
+    req.body['image_name'] = req.files.image.name
 
     try{
         await Event.create(
@@ -53,11 +59,14 @@ const updateEvent = async (req, res) => {
 const deleteEvent = async (req, res) => {
     console.log("delete event api called", req.body)
     let rec = await Event.findOne({'event_id': req.body.event_id})
+    let img_path = rec['image_path']
+
     if(!rec){
         res.status(404).send(JSON.stringify({"message": "event id not found"}))
     }
     try{
         let rec = await Event.deleteOne({'event_id': req.body.event_id})
+        deleteImage(img_path)
         res.send(JSON.stringify({"message": "event deleted successfully"}))
     }
     catch(e){
