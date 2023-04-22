@@ -271,7 +271,7 @@ function uploadImage(image) {
 
 const uploadProfileImage = async (req, res) => {
   const email = req.body.email;
-  console.log(email);
+  console.log(req);
   let isObject = function (a) {
     return !!a && a.constructor === Object;
   };
@@ -858,5 +858,6 @@ module.exports = {
   mostEventCategoryAttendedByUser,
   mostEventsHostedByUser,
   uploadImage,
-  deleteImage
+  deleteImage,
+  getImageFromS3,
 };

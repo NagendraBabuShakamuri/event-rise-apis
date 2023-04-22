@@ -29,6 +29,7 @@ const {
 
 const {getUserDetails} = require("../controllers/sessionManagement")
 const { createEvent, getEvents, updateEvent, deleteEvent } = require("../controllers/eventsController.js");
+const { checkProfilePic, getEventImage } = require("../controllers/ImageController");
 
 router.get("/health", (req, res) => {
   res.send("Hello world");
@@ -127,5 +128,9 @@ router.delete("/deleteEvent", deleteEvent);
 router.delete("/deleteProfileImage", deleteProfileImage);
 
 router.post("/getProfileImage", getProfileImage);
+
+router.get("/checkProfilePic", checkProfilePic)
+
+router.post("/getEventImage", getEventImage);
 
 module.exports = router;
