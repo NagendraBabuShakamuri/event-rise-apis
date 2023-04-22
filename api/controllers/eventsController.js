@@ -75,8 +75,8 @@ const deleteEvent = async (req, res) => {
     }
 }
 module.exports = {
-    createEvent,
-    getEvents,
-    updateEvent,
-    deleteEvent
+  createEvent,
+  getEvents,
+  updateEvent,
+  deleteEvent,
 };
