@@ -35,7 +35,7 @@ router.get("/health", (req, res) => {
   res.send("Hello world");
 });
 
-router.get("/userProfile", getUserByEmail);
+router.post("/userProfile", getUserByEmail);
 
 router.post("/createUser", createUser);
 

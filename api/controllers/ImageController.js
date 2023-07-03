@@ -15,6 +15,7 @@ const checkProfilePic = async (req, res) => {
 
 const getEventImage = async (req, res) => {
   const s3_bucket_path = req.body.image_path;
+  console.log(s3_bucket_path);
   const imageBody = await getImageFromS3(s3_bucket_path);
   const imageData = Buffer.from(imageBody.Body).toString("base64");
   const imageSrc = `data:${imageBody.ContentType};base64,${imageData}`;

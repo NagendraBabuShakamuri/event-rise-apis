@@ -27,8 +27,8 @@ function isPasswordSame(user_pass, password) {
 }
 
 const getUserByEmail = async (req, res) => {
-  console.log("req", req.query);
-  const email = req.query.email;
+  const email = req.body.email;
+  console.log(email);
   if (typeof email === "string") {
     let found = await User.findOne(
       { email },
@@ -101,9 +101,11 @@ const createUser = async (req, res) => {
   const state = req.body.state;
   const zip = req.body.zip;
   const country = req.body.country;
-
+  console.log(req.body);
   let count = Object.keys(req.body).length;
+  console.log(count);
   if (count === 12) {
+    console.log(req.body);
     let found = await User.findOne({ email: email });
     if (!found) {
       password = await bcrypt.hash(password, saltRounds);
@@ -121,10 +123,7 @@ const createUser = async (req, res) => {
         zip: zip,
         country: country,
       });
-
-      await user
-        .save()
-        .then(() => {
+     let create =  await user.save().then(() => {
           res.status(201);
           res.send({
             Status: 201,
@@ -134,6 +133,7 @@ const createUser = async (req, res) => {
         .catch((err) => {
           res.send(err);
         });
+	    console.log(create);
       // logger.info(`Created the user.`);
     } else {
       res.status(400);
@@ -535,7 +535,7 @@ const getDetailsByEventCategory = async (req, res) => {
   try {
     const category = req.params.category;
     const events = await Events.find(
-      { event_category: category, status: "approved" },
+      { event_category: category },
       {
         event_id: 1,
         title: 1,
@@ -644,7 +644,7 @@ const getUpcomingEventsByUserId = async (req, res) => {
 
 const sendEmailToEventCreator = async (req, res) => {
   try {
-    const eventId = req.params.eventId;
+    const eventId = req.body.event_id; 
     console.log(eventId);
     const events = await Events.findOne({ event_id: eventId });
     console.log(events);
